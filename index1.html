@@ -3,757 +3,344 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>○○노래주점 — 단골관리</title>
+<title>단골관리 — Dreammaker</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    background: #f4f5f7;
-    color: #222;
-    font-size: 16px;
+    background: #f4f5f7; color: #222; font-size: 16px;
   }
-  .app {
-    display: flex;
-    min-height: 100vh;
-  }
-
-  /* ===== Sidebar ===== */
-  .sidebar {
-    width: 240px;
-    background: #1a1a1a;
-    color: #fff;
-    padding: 24px 16px;
-    flex-shrink: 0;
-  }
-  .sidebar-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    margin-bottom: 32px;
-  }
-  .sidebar-logo .icon {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #d4af37 0%, #f5d97a 100%);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-  }
-  .sidebar-logo .name {
-    font-size: 17px;
-    font-weight: 700;
-    color: #f5d97a;
-  }
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 14px;
-    border-radius: 10px;
-    cursor: pointer;
-    color: #aaa;
-    font-size: 16px;
-    margin-bottom: 4px;
-    transition: all 0.15s;
-  }
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; background: #1a1a1a; color: #fff; padding: 24px 16px; flex-shrink: 0; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin-bottom: 24px; }
+  .sidebar-logo .icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #d4af37, #f5d97a); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .sidebar-logo .name { font-size: 16px; font-weight: 700; color: #f5d97a; }
+  .nav-item { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; cursor: pointer; color: #aaa; font-size: 16px; margin-bottom: 4px; transition: all 0.15s; }
   .nav-item:hover { background: #252525; color: #fff; }
-  .nav-item.active {
-    background: linear-gradient(135deg, #d4af37 0%, #b8932d 100%);
-    color: #000;
-    font-weight: 700;
-  }
+  .nav-item.active { background: linear-gradient(135deg, #d4af37, #b8932d); color: #000; font-weight: 700; }
   .nav-item .icon { font-size: 20px; width: 24px; text-align: center; }
-
-  /* ===== Main ===== */
-  .main {
-    flex: 1;
-    padding: 28px 36px;
-    overflow-x: hidden;
-  }
-  .page-title {
-    font-size: 28px;
-    font-weight: 800;
-    margin-bottom: 24px;
-    color: #111;
-  }
-  .page { display: none; }
-  .page.active { display: block; }
-
-  /* ===== Cards ===== */
-  .stat-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-  .stat-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 22px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  }
-  .stat-card .label {
-    font-size: 14px;
-    color: #888;
-    margin-bottom: 8px;
-  }
-  .stat-card .value {
-    font-size: 32px;
-    font-weight: 800;
-    color: #111;
-  }
-  .stat-card .delta {
-    font-size: 13px;
-    color: #2ea043;
-    margin-top: 6px;
-  }
-  .stat-card .delta.down { color: #d04949; }
-
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 28px;
-  }
-  .card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  }
-  .card-title {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    color: #111;
-  }
-
-  /* ===== Quick Actions ===== */
-  .quick-actions {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-top: 12px;
-  }
-  .quick-btn {
-    padding: 18px;
-    background: #fafafa;
-    border: 2px solid #eee;
-    border-radius: 12px;
-    cursor: pointer;
-    text-align: center;
-    font-size: 15px;
-    font-weight: 600;
-    transition: all 0.15s;
-  }
-  .quick-btn:hover {
-    background: #fff8e1;
-    border-color: #d4af37;
-  }
-  .quick-btn .icon {
-    font-size: 28px;
-    display: block;
-    margin-bottom: 6px;
-  }
-
-  /* ===== Customer Table ===== */
-  .toolbar {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .search-input {
-    flex: 1;
-    min-width: 240px;
-    padding: 12px 16px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    font-size: 15px;
-  }
-  .search-input:focus { outline: none; border-color: #d4af37; }
-  .filter-chip {
-    padding: 10px 16px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 999px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-  }
-  .filter-chip.active {
-    background: #1a1a1a;
-    color: #f5d97a;
-    border-color: #1a1a1a;
-  }
-  table {
-    width: 100%;
-    background: #fff;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    border-collapse: collapse;
-  }
-  th, td {
-    padding: 14px 16px;
-    text-align: left;
-    font-size: 15px;
-    border-bottom: 1px solid #f0f0f0;
-  }
-  th {
-    background: #fafafa;
-    font-weight: 700;
-    color: #555;
-    font-size: 14px;
-  }
-  tr:last-child td { border-bottom: none; }
+  .logout-btn { margin-top: 32px; padding: 12px; background: #2a2a2a; color: #aaa; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; width: 100%; }
+  .logout-btn:hover { background: #3a3a3a; color: #fff; }
+  .main { flex: 1; padding: 28px 36px; overflow-x: hidden; }
+  .page-title { font-size: 28px; font-weight: 800; margin-bottom: 24px; color: #111; }
+  .page { display: none; } .page.active { display: block; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: #fff; border-radius: 14px; padding: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .stat-card .label { font-size: 14px; color: #888; margin-bottom: 8px; }
+  .stat-card .value { font-size: 32px; font-weight: 800; color: #111; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  .card { background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .card-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #111; }
+  .toolbar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+  .search-input { flex: 1; min-width: 240px; padding: 12px 16px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; }
+  .filter-chip { padding: 10px 16px; background: #fff; border: 1px solid #ddd; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .filter-chip.active { background: #1a1a1a; color: #f5d97a; border-color: #1a1a1a; }
+  table { width: 100%; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-collapse: collapse; }
+  th, td { padding: 14px 16px; text-align: left; font-size: 15px; border-bottom: 1px solid #f0f0f0; }
+  th { background: #fafafa; font-weight: 700; color: #555; font-size: 14px; }
   tr:hover td { background: #fafafa; }
-  .badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-  }
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
   .badge-vip { background: #fff0d6; color: #b8860b; }
   .badge-regular { background: #e8f4fd; color: #2575c4; }
   .badge-new { background: #e8f8e8; color: #2ea043; }
   .badge-inactive { background: #f4f4f4; color: #888; }
-
-  /* ===== Buttons ===== */
-  .btn {
-    padding: 12px 22px;
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
-  .btn-primary {
-    background: linear-gradient(135deg, #d4af37 0%, #b8932d 100%);
-    color: #000;
-  }
-  .btn-primary:hover { opacity: 0.9; }
-  .btn-secondary {
-    background: #f0f0f0;
-    color: #333;
-  }
-  .btn-danger { background: #fde8e8; color: #d04949; }
-
-  /* ===== Message Composer ===== */
-  .composer-grid {
-    display: grid;
-    grid-template-columns: 1fr 360px;
-    gap: 20px;
-  }
-  .form-group {
-    margin-bottom: 18px;
-  }
-  .form-label {
-    display: block;
-    font-size: 14px;
-    font-weight: 700;
-    color: #555;
-    margin-bottom: 8px;
-  }
-  .form-input, .form-textarea, .form-select {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    font-size: 15px;
-    font-family: inherit;
-  }
-  .form-input:focus, .form-textarea:focus, .form-select:focus {
-    outline: none; border-color: #d4af37;
-  }
-  .form-textarea {
-    min-height: 140px;
-    resize: vertical;
-  }
-  .target-options {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  .target-option {
-    padding: 14px;
-    border: 2px solid #eee;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  .target-option.active {
-    border-color: #d4af37;
-    background: #fff8e1;
-  }
-  .target-option .count {
-    font-size: 12px;
-    color: #888;
-    margin-top: 2px;
-  }
-
-  /* ===== Phone Preview ===== */
-  .phone-preview {
-    background: #1a1a1a;
-    border-radius: 24px;
-    padding: 16px;
-    color: #fff;
-  }
-  .phone-screen {
-    background: #b6cad6;
-    border-radius: 14px;
-    padding: 20px 14px;
-    min-height: 400px;
-  }
-  .kakao-bubble {
-    background: #fff;
-    border-radius: 12px;
-    padding: 16px;
-    color: #222;
-    font-size: 14px;
-    line-height: 1.6;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  .kakao-bubble .store {
-    font-size: 12px;
-    color: #888;
-    margin-bottom: 8px;
-    font-weight: 700;
-  }
-
-  /* ===== Templates ===== */
-  .template-list {
-    display: grid;
-    gap: 10px;
-    margin-top: 12px;
-  }
-  .template-item {
-    padding: 14px;
-    border: 1px solid #eee;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .template-item:hover {
-    border-color: #d4af37;
-    background: #fff8e1;
-  }
-  .template-item .title {
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-  .template-item .preview {
-    font-size: 13px;
-    color: #888;
-  }
-
-  /* ===== Event Page ===== */
-  .event-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .event-icon {
-    width: 60px; height: 60px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #fff0d6 0%, #ffd97a 100%);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 28px;
-    flex-shrink: 0;
-  }
-  .event-info { flex: 1; }
-  .event-info .title { font-size: 16px; font-weight: 700; }
-  .event-info .meta { font-size: 13px; color: #888; margin-top: 4px; }
-  .switch {
-    position: relative;
-    width: 50px;
-    height: 28px;
-    background: #ddd;
-    border-radius: 999px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .switch.on { background: #d4af37; }
-  .switch::after {
-    content: '';
-    position: absolute;
-    top: 3px; left: 3px;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    background: #fff;
-    transition: left 0.2s;
-  }
-  .switch.on::after { left: 25px; }
-
-  /* ===== Modal ===== */
-  .modal-bg {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-  }
-  .modal-bg.show { display: flex; }
-  .modal-box {
-    background: #fff;
-    border-radius: 16px;
-    padding: 28px;
-    width: 90%;
-    max-width: 480px;
-  }
-  .modal-title {
-    font-size: 20px;
-    font-weight: 800;
-    margin-bottom: 20px;
-  }
-
+  .btn { padding: 12px 22px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .btn-primary { background: linear-gradient(135deg, #d4af37, #b8932d); color: #000; }
+  .btn-secondary { background: #f0f0f0; color: #333; }
+  .composer-grid { display: grid; grid-template-columns: 1fr 360px; gap: 20px; }
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; font-size: 14px; font-weight: 700; color: #555; margin-bottom: 8px; }
+  .form-textarea, .form-select, .form-input { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; font-family: inherit; }
+  .form-textarea { min-height: 140px; resize: vertical; }
+  .target-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .target-option { padding: 14px; border: 2px solid #eee; border-radius: 10px; cursor: pointer; font-size: 14px; }
+  .target-option.active { border-color: #d4af37; background: #fff8e1; }
+  .target-option .count { font-size: 12px; color: #888; margin-top: 2px; }
+  .template-list { display: grid; gap: 10px; margin-top: 12px; }
+  .template-item { padding: 14px; border: 1px solid #eee; border-radius: 10px; cursor: pointer; }
+  .template-item:hover { border-color: #d4af37; background: #fff8e1; }
+  .template-item .title { font-weight: 700; margin-bottom: 4px; }
+  .template-item .preview { font-size: 13px; color: #888; }
+  .auth-loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 16px; }
+  .spinner { width: 48px; height: 48px; border: 4px solid #ddd; border-top-color: #d4af37; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty-state { text-align: center; padding: 60px 24px; color: #888; }
+  .empty-state .icon { font-size: 64px; margin-bottom: 16px; }
   @media (max-width: 768px) {
     .sidebar { width: 70px; padding: 16px 8px; }
     .sidebar-logo .name { display: none; }
     .nav-item span:not(.icon) { display: none; }
     .nav-item { justify-content: center; }
+    .logout-btn { padding: 8px; font-size: 12px; }
     .main { padding: 20px 16px; }
     .stat-grid { grid-template-columns: repeat(2, 1fr); }
     .grid-2 { grid-template-columns: 1fr; }
     .composer-grid { grid-template-columns: 1fr; }
-    .quick-actions { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
-<div class="app">
+<div id="auth-loading" class="auth-loading">
+  <div class="spinner"></div>
+  <div>로그인 확인 중...</div>
+</div>
 
-  <!-- ===== Sidebar ===== -->
+<div class="app" id="app" style="display:none;">
+
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="icon">🎤</div>
-      <div class="name">○○노래주점</div>
+      <div class="name" id="sidebarStoreName">매장명</div>
     </div>
-    <div class="nav-item active" data-page="home">
-      <span class="icon">🏠</span><span>홈</span>
-    </div>
-    <div class="nav-item" data-page="customers">
-      <span class="icon">👥</span><span>고객 관리</span>
-    </div>
-    <div class="nav-item" data-page="messages">
-      <span class="icon">💬</span><span>메시지 발송</span>
-    </div>
-    <div class="nav-item" data-page="events">
-      <span class="icon">🎁</span><span>이벤트 관리</span>
-    </div>
-    <div class="nav-item" data-page="stats">
-      <span class="icon">📊</span><span>통계</span>
-    </div>
-    <div class="nav-item" data-page="settings">
-      <span class="icon">⚙️</span><span>설정</span>
-    </div>
+    <div class="nav-item active" data-page="home"><span class="icon">🏠</span><span>홈</span></div>
+    <div class="nav-item" data-page="customers"><span class="icon">👥</span><span>고객 관리</span></div>
+    <div class="nav-item" data-page="messages"><span class="icon">💬</span><span>메시지 발송</span></div>
+    <div class="nav-item" data-page="events"><span class="icon">🎁</span><span>이벤트 관리</span></div>
+    <div class="nav-item" data-page="stats"><span class="icon">📊</span><span>통계</span></div>
+    <div class="nav-item" data-page="settings"><span class="icon">⚙️</span><span>설정</span></div>
+    <button class="logout-btn" id="logoutBtn">로그아웃</button>
   </aside>
 
-  <!-- ===== Main ===== -->
   <main class="main">
 
-    <!-- ===== HOME ===== -->
     <div class="page active" id="page-home">
       <div class="page-title">오늘의 한눈에 보기</div>
-
       <div class="stat-grid">
-        <div class="stat-card">
-          <div class="label">오늘 가입한 손님</div>
-          <div class="value">12<span style="font-size:18px;color:#888;">명</span></div>
-          <div class="delta">▲ 어제보다 +3명</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">전체 단골</div>
-          <div class="value">487<span style="font-size:18px;color:#888;">명</span></div>
-          <div class="delta">▲ 이번달 +42명</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">이번 주 재방문</div>
-          <div class="value">68<span style="font-size:18px;color:#888;">명</span></div>
-          <div class="delta">▲ 지난주 +12%</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">VIP 고객</div>
-          <div class="value">34<span style="font-size:18px;color:#888;">명</span></div>
-          <div class="delta">▲ +2명</div>
-        </div>
+        <div class="stat-card"><div class="label">전체 단골</div><div class="value" id="stat-total">-</div></div>
+        <div class="stat-card"><div class="label">오늘 가입</div><div class="value" id="stat-today">-</div></div>
+        <div class="stat-card"><div class="label">신규 (1회)</div><div class="value" id="stat-new">-</div></div>
+        <div class="stat-card"><div class="label">VIP 고객</div><div class="value" id="stat-vip">-</div></div>
       </div>
-
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-title">⚡ 빠른 작업</div>
-          <div class="quick-actions">
-            <div class="quick-btn" onclick="navigate('messages')">
-              <span class="icon">💬</span>
-              메시지 보내기
-            </div>
-            <div class="quick-btn" onclick="navigate('events')">
-              <span class="icon">🎁</span>
-              오늘의 사은품
-            </div>
-            <div class="quick-btn" onclick="navigate('customers')">
-              <span class="icon">⭐</span>
-              VIP 보기
-            </div>
-            <div class="quick-btn" onclick="alert('생일 손님 자동 추출 기능')">
-              <span class="icon">🎂</span>
-              생일 손님
-            </div>
-            <div class="quick-btn" onclick="alert('60일 무방문 이탈 손님 추출')">
-              <span class="icon">🔔</span>
-              컴백 메시지
-            </div>
-            <div class="quick-btn" onclick="alert('비 오는 날 사은품 발송')">
-              <span class="icon">🌧️</span>
-              비오는 날
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">📈 최근 7일 가입자</div>
-          <canvas id="signupChart" height="180"></canvas>
-        </div>
-      </div>
-
       <div class="card">
         <div class="card-title">🆕 최근 가입한 손님</div>
         <table>
-          <thead>
-            <tr><th>이름/전화</th><th>가입일</th><th>마케팅 동의</th><th>야간 동의</th><th></th></tr>
-          </thead>
+          <thead><tr><th>전화번호</th><th>가입일</th><th>방문횟수</th><th>마케팅 동의</th><th>야간 동의</th></tr></thead>
           <tbody id="recentSignups"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- ===== CUSTOMERS ===== -->
     <div class="page" id="page-customers">
       <div class="page-title">고객 관리</div>
-
       <div class="toolbar">
-        <input type="text" class="search-input" placeholder="🔍 이름 또는 전화번호로 검색" id="searchInput">
-        <div class="filter-chip active" data-filter="all">전체 (487)</div>
-        <div class="filter-chip" data-filter="vip">VIP (34)</div>
-        <div class="filter-chip" data-filter="regular">단골 (152)</div>
-        <div class="filter-chip" data-filter="new">신규 (89)</div>
-        <div class="filter-chip" data-filter="inactive">이탈 (212)</div>
+        <input type="text" class="search-input" placeholder="🔍 전화번호로 검색" id="searchInput">
+        <div class="filter-chip active" data-filter="all">전체</div>
+        <div class="filter-chip" data-filter="vip">VIP</div>
+        <div class="filter-chip" data-filter="regular">단골</div>
+        <div class="filter-chip" data-filter="new">신규</div>
+        <div class="filter-chip" data-filter="inactive">이탈</div>
       </div>
-
       <table>
-        <thead>
-          <tr>
-            <th>이름</th>
-            <th>전화번호</th>
-            <th>등급</th>
-            <th>방문횟수</th>
-            <th>마지막 방문</th>
-            <th>총 매출</th>
-            <th>관리</th>
-          </tr>
-        </thead>
+        <thead><tr><th>전화번호</th><th>등급</th><th>방문횟수</th><th>마지막 방문</th><th>총 매출</th><th>동의</th></tr></thead>
         <tbody id="customerTable"></tbody>
       </table>
     </div>
 
-    <!-- ===== MESSAGES ===== -->
     <div class="page" id="page-messages">
       <div class="page-title">메시지 발송</div>
-
       <div class="composer-grid">
         <div class="card">
           <div class="form-group">
             <label class="form-label">📋 템플릿 선택</label>
             <div class="template-list">
-              <div class="template-item" onclick="loadTemplate(0)">
-                <div class="title">🎉 신규 환영 메시지</div>
-                <div class="preview">○○님 가입을 환영합니다! 첫 방문 시 맥주 1병 무료...</div>
-              </div>
-              <div class="template-item" onclick="loadTemplate(1)">
-                <div class="title">🌧️ 비오는 날 사은품</div>
-                <div class="preview">오늘 같은 날엔 ○○노래주점에서 따뜻한 전과 함께...</div>
-              </div>
-              <div class="template-item" onclick="loadTemplate(2)">
-                <div class="title">⭐ VIP 전용 안내</div>
-                <div class="preview">단골 ○○님께만 드리는 특별 혜택! 양주 1병 서비스...</div>
-              </div>
-              <div class="template-item" onclick="loadTemplate(3)">
-                <div class="title">💔 이탈 고객 컴백</div>
-                <div class="preview">오랜만이에요 ○○님~ 한 달 만에 오시면 안주 무료...</div>
-              </div>
+              <div class="template-item" onclick="loadTemplate(0)"><div class="title">🎉 신규 환영</div><div class="preview">가입을 환영합니다...</div></div>
+              <div class="template-item" onclick="loadTemplate(1)"><div class="title">🌧️ 비오는 날</div><div class="preview">비 오는 오늘 따끈한 전...</div></div>
+              <div class="template-item" onclick="loadTemplate(2)"><div class="title">⭐ VIP 전용</div><div class="preview">VIP 고객님께만...</div></div>
+              <div class="template-item" onclick="loadTemplate(3)"><div class="title">💔 이탈 컴백</div><div class="preview">오랜만이에요...</div></div>
             </div>
           </div>
         </div>
-
         <div>
           <div class="card">
             <div class="form-group">
               <label class="form-label">🎯 발송 대상</label>
-              <div class="target-options">
-                <div class="target-option active">
-                  전체 단골
-                  <div class="count">487명</div>
-                </div>
-                <div class="target-option">
-                  VIP만
-                  <div class="count">34명</div>
-                </div>
-                <div class="target-option">
-                  신규 (1회 방문)
-                  <div class="count">89명</div>
-                </div>
-                <div class="target-option">
-                  이탈 (60일+)
-                  <div class="count">212명</div>
-                </div>
+              <div class="target-options" id="targetOptions">
+                <div class="target-option active" data-target="all">전체 단골<div class="count" id="cnt-all">- 명</div></div>
+                <div class="target-option" data-target="vip">VIP만<div class="count" id="cnt-vip">- 명</div></div>
+                <div class="target-option" data-target="new">신규<div class="count" id="cnt-new">- 명</div></div>
+                <div class="target-option" data-target="inactive">이탈<div class="count" id="cnt-inactive">- 명</div></div>
               </div>
             </div>
-
             <div class="form-group">
               <label class="form-label">✏️ 메시지 내용</label>
               <textarea class="form-textarea" id="msgContent" placeholder="템플릿을 선택하거나 직접 입력하세요..."></textarea>
             </div>
-
-            <div class="form-group">
-              <label class="form-label">📅 발송 시간</label>
-              <select class="form-select">
-                <option>지금 즉시 발송</option>
-                <option>오늘 저녁 7시 발송 예약</option>
-                <option>내일 오전 10시 발송 예약</option>
-                <option>직접 시간 지정...</option>
-              </select>
-            </div>
-
             <div style="display: flex; gap: 10px;">
               <button class="btn btn-secondary" style="flex:1;">미리보기</button>
-              <button class="btn btn-primary" style="flex:2;" onclick="alert('발송 확인 모달 표시\n실제 운영 시: 알림톡/SMS API 호출')">📤 발송하기</button>
+              <button class="btn btn-primary" style="flex:2;" onclick="alert('알림톡 API 연동 후 작동.\n현재 발송 대상 명단은 콘솔에서 확인 가능.')">📤 발송하기</button>
             </div>
           </div>
-
           <div style="margin-top: 16px; padding: 16px; background: #fff8e1; border-radius: 12px; font-size: 13px; color: #8a6914; line-height: 1.6;">
-            💡 <strong>발송 비용 안내</strong><br>
-            전체 단골 487명 발송 시:<br>
-            카카오 알림톡: <strong>약 4,400원</strong> (건당 9원)<br>
-            SMS 문자: 약 14,600원 (건당 30원)
+            💡 <strong>발송 비용 (예상)</strong><br>
+            <span id="cost-info">계산 중...</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ===== EVENTS ===== -->
     <div class="page" id="page-events">
       <div class="page-title">이벤트 관리</div>
-
-      <div class="card" style="margin-bottom: 20px;">
-        <div class="card-title">🎰 룰렛 상품 설정</div>
-        <p style="color:#888; font-size:14px; margin-bottom:12px;">큐알 가입 즉시 손님에게 제공되는 룰렛 상품 목록과 당첨 확률을 관리합니다.</p>
-        <table>
-          <thead><tr><th>상품</th><th>당첨 확률</th><th>오늘 당첨자</th><th>활성</th></tr></thead>
-          <tbody>
-            <tr><td>🍺 맥주 1병</td><td>50%</td><td>6명</td><td><div class="switch on"></div></td></tr>
-            <tr><td>🍢 안주 1접시</td><td>25%</td><td>3명</td><td><div class="switch on"></div></td></tr>
-            <tr><td>🎵 노래 추가 1곡</td><td>15%</td><td>2명</td><td><div class="switch on"></div></td></tr>
-            <tr><td>🍷 양주 1병</td><td>1%</td><td>0명</td><td><div class="switch on"></div></td></tr>
-            <tr><td>💎 당첨 (꽝없음)</td><td>9%</td><td>1명</td><td><div class="switch on"></div></td></tr>
-          </tbody>
-        </table>
+      <div class="card"><div class="card-title">🎰 룰렛 상품 설정</div>
+        <p style="color:#888; font-size:14px;">큐알 가입 즉시 손님에게 제공되는 룰렛 상품과 당첨 확률.<br>(오픈클로 룰렛 페이지에서 직접 관리)</p>
       </div>
-
-      <div class="card">
-        <div class="card-title">🎁 오늘의 사은품 (방문 시 자동 안내)</div>
-        <div class="event-card">
-          <div class="event-icon">🌧️</div>
-          <div class="event-info">
-            <div class="title">비 오는 날 — 따끈한 전 1접시</div>
-            <div class="meta">강수확률 60% 이상 시 자동 활성화</div>
-          </div>
-          <div class="switch on"></div>
-        </div>
-        <div class="event-card">
-          <div class="event-icon">🍺</div>
-          <div class="event-info">
-            <div class="title">월요일 — 맥주 1병 서비스</div>
-            <div class="meta">매주 월요일 자동</div>
-          </div>
-          <div class="switch on"></div>
-        </div>
-        <div class="event-card">
-          <div class="event-icon">🎂</div>
-          <div class="event-info">
-            <div class="title">생일 손님 — 양주 1병 서비스</div>
-            <div class="meta">생일 당월 자동 메시지 + 매장 알림</div>
-          </div>
-          <div class="switch on"></div>
-        </div>
+      <div class="card" style="margin-top:16px;"><div class="card-title">🎁 자동 사은품 (개발 예정)</div>
+        <p style="color:#888;">비오는 날·생일·월요일 등 자동 사은품 발송. 알림톡 API 연동 후 활성화.</p>
       </div>
     </div>
 
-    <!-- ===== STATS ===== -->
     <div class="page" id="page-stats">
       <div class="page-title">통계</div>
       <div class="grid-2">
-        <div class="card">
-          <div class="card-title">월별 가입자 추이</div>
-          <canvas id="monthlyChart" height="220"></canvas>
-        </div>
-        <div class="card">
-          <div class="card-title">고객 등급 분포</div>
-          <canvas id="gradeChart" height="220"></canvas>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">메시지 발송 vs 방문 전환</div>
-        <canvas id="conversionChart" height="180"></canvas>
+        <div class="card"><div class="card-title">고객 등급 분포</div><canvas id="gradeChart" height="220"></canvas></div>
+        <div class="card"><div class="card-title">최근 7일 가입자</div><canvas id="signupChart" height="220"></canvas></div>
       </div>
     </div>
 
-    <!-- ===== SETTINGS ===== -->
     <div class="page" id="page-settings">
       <div class="page-title">설정</div>
       <div class="card">
         <div class="card-title">매장 정보</div>
         <div class="form-group">
           <label class="form-label">매장 이름</label>
-          <input class="form-input" value="○○노래주점">
+          <input class="form-input" id="setting-name" value="">
         </div>
         <div class="form-group">
-          <label class="form-label">큐알 주소</label>
-          <input class="form-input" value="https://your-domain.com/store/001" readonly>
+          <label class="form-label">큐알 주소 (이걸 큐알로 만드세요)</label>
+          <input class="form-input" id="setting-qr-url" readonly>
         </div>
         <div class="form-group">
-          <label class="form-label">알림톡 발신 프로필 (카카오비즈)</label>
-          <input class="form-input" placeholder="발신 프로필 키 입력">
+          <label class="form-label">룰렛 페이지 URL (오픈클로가 만든 URL)</label>
+          <input class="form-input" id="setting-roulette-url" placeholder="https://...">
         </div>
-        <button class="btn btn-primary">저장</button>
+        <button class="btn btn-primary" id="saveSettingsBtn">저장</button>
       </div>
     </div>
   </main>
 </div>
 
-<script>
-  // ====== Mock Data ======
-  const MOCK_CUSTOMERS = [
-    { name: '김○수', phone: '010-1234-5678', grade: 'vip', visits: 28, last: '오늘', total: 5400000 },
-    { name: '박○철', phone: '010-2345-6789', grade: 'vip', visits: 22, last: '어제', total: 4200000 },
-    { name: '이○희', phone: '010-3456-7890', grade: 'regular', visits: 9, last: '3일 전', total: 1800000 },
-    { name: '정○호', phone: '010-4567-8901', grade: 'regular', visits: 7, last: '1주 전', total: 1300000 },
-    { name: '최○숙', phone: '010-5678-9012', grade: 'new', visits: 1, last: '오늘', total: 240000 },
-    { name: '강○민', phone: '010-6789-0123', grade: 'new', visits: 1, last: '어제', total: 180000 },
-    { name: '윤○진', phone: '010-7890-1234', grade: 'inactive', visits: 4, last: '3개월 전', total: 720000 },
-    { name: '한○석', phone: '010-8901-2345', grade: 'regular', visits: 12, last: '5일 전', total: 2400000 },
-  ];
+<script type="module">
+  import { auth, db } from './firebase-config.js';
+  import { onAuthStateChanged, signOut }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { doc, getDoc, setDoc, collection, getDocs, query, orderBy, where }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  let STORE_ID = null;
+  let CUSTOMERS = [];
+
+  // 인증 확인
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = '/login.html';
+      return;
+    }
+
+    const ownerDoc = await getDoc(doc(db, 'shop_owners', user.uid));
+    if (!ownerDoc.exists()) {
+      alert('매장 정보가 등록되지 않았습니다. PG 운영자에게 문의해주세요.');
+      await signOut(auth);
+      window.location.href = '/login.html';
+      return;
+    }
+
+    const ownerData = ownerDoc.data();
+
+    // URL 파라미터 또는 owner의 store_id 사용
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlStoreId = urlParams.get('store');
+
+    if (ownerData.role === 'super_admin') {
+      // 슈퍼 관리자는 URL에 명시된 매장 봄
+      STORE_ID = urlStoreId || ownerData.store_id;
+    } else {
+      // 일반 사장님은 자기 매장만
+      STORE_ID = ownerData.store_id;
+    }
+
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+
+    await loadStore();
+    await loadCustomers();
+    setupNav();
+  });
+
+  async function loadStore() {
+    const storeDoc = await getDoc(doc(db, 'stores', STORE_ID));
+    if (!storeDoc.exists()) {
+      document.getElementById('sidebarStoreName').textContent = '(매장 미등록)';
+      return;
+    }
+    const data = storeDoc.data();
+    document.getElementById('sidebarStoreName').textContent = data.name || '매장';
+    document.getElementById('setting-name').value = data.name || '';
+    document.getElementById('setting-qr-url').value = window.location.origin + '/?store=' + STORE_ID;
+    document.getElementById('setting-roulette-url').value = data.rouletteUrl || '';
+  }
+
+  async function loadCustomers() {
+    const customersRef = collection(db, 'stores', STORE_ID, 'customers');
+    const snap = await getDocs(customersRef);
+    CUSTOMERS = [];
+    snap.forEach(doc => CUSTOMERS.push({ id: doc.id, ...doc.data() }));
+
+    // 등급 자동 계산
+    const now = Date.now();
+    const D60 = 60 * 24 * 60 * 60 * 1000;
+    CUSTOMERS.forEach(c => {
+      const lastVisit = c.last_visit?.toMillis ? c.last_visit.toMillis() : 0;
+      const daysSince = (now - lastVisit) / (24 * 60 * 60 * 1000);
+      if (daysSince > 60) c.computed_grade = 'inactive';
+      else if (c.visit_count >= 20) c.computed_grade = 'vip';
+      else if (c.visit_count >= 5) c.computed_grade = 'regular';
+      else c.computed_grade = 'new';
+    });
+
+    renderHome();
+    renderCustomers();
+    renderStats();
+    updateMessageCounts();
+  }
+
+  function renderHome() {
+    const total = CUSTOMERS.length;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const todayMs = today.getTime();
+    const todayCount = CUSTOMERS.filter(c => {
+      const created = c.created_at?.toMillis ? c.created_at.toMillis() : 0;
+      return created >= todayMs;
+    }).length;
+    const newCount = CUSTOMERS.filter(c => c.computed_grade === 'new').length;
+    const vipCount = CUSTOMERS.filter(c => c.computed_grade === 'vip').length;
+
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-today').textContent = todayCount;
+    document.getElementById('stat-new').textContent = newCount;
+    document.getElementById('stat-vip').textContent = vipCount;
+
+    // 최근 가입 5명
+    const recent = [...CUSTOMERS]
+      .sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0))
+      .slice(0, 5);
+    const tbody = document.getElementById('recentSignups');
+    if (recent.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;padding:40px;">아직 가입한 손님이 없습니다.</td></tr>';
+    } else {
+      tbody.innerHTML = recent.map(c => {
+        const date = c.created_at?.toDate ? c.created_at.toDate().toLocaleDateString('ko-KR') : '-';
+        const phone = c.phone ? c.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') : '-';
+        return `<tr>
+          <td><strong>${phone}</strong></td>
+          <td>${date}</td>
+          <td>${c.visit_count || 1}회</td>
+          <td>${c.consent_marketing ? '✅' : '❌'}</td>
+          <td>${c.consent_night ? '✅' : '❌'}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
 
   const GRADE_LABELS = {
     vip: { label: 'VIP', class: 'badge-vip' },
@@ -762,70 +349,38 @@
     inactive: { label: '이탈', class: 'badge-inactive' }
   };
 
-  // ====== Templates ======
-  const TEMPLATES = [
-    `[○○노래주점]\n#{이름}님, 단골 가입을 환영합니다!\n첫 방문 시 시원한 맥주 1병 무료 서비스 드립니다 🍺\n오늘 저녁 어떠세요?\n\n수신거부: 080-XXX-XXXX`,
-    `[○○노래주점]\n#{이름}님~ 비 오는 오늘\n따끈한 전 한 접시 무료 서비스 드립니다 🌧️\n친구분들과 한 잔 어떠세요?\n\n수신거부: 080-XXX-XXXX`,
-    `[○○노래주점]\nVIP #{이름}님께만 드리는 특별 혜택!\n이번 주 양주 1병 서비스 ⭐\n예약 환영합니다.\n\n수신거부: 080-XXX-XXXX`,
-    `[○○노래주점]\n#{이름}님 오랜만이에요~\n한 달 만에 다시 오시면\n안주 1접시 무료 드릴게요 💝\n\n수신거부: 080-XXX-XXXX`
-  ];
-
-  function loadTemplate(idx) {
-    document.getElementById('msgContent').value = TEMPLATES[idx];
-  }
-
-  // ====== Render Customers ======
   function renderCustomers(filter = 'all', search = '') {
-    const tbody = document.getElementById('customerTable');
-    let list = MOCK_CUSTOMERS;
-    if (filter !== 'all') list = list.filter(c => c.grade === filter);
+    let list = CUSTOMERS;
+    if (filter !== 'all') list = list.filter(c => c.computed_grade === filter);
     if (search) {
-      const s = search.toLowerCase();
-      list = list.filter(c => c.name.includes(search) || c.phone.includes(search));
+      const s = search.replace(/-/g, '');
+      list = list.filter(c => (c.phone || '').includes(s));
+    }
+    const tbody = document.getElementById('customerTable');
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;padding:40px;">조건에 맞는 손님이 없습니다.</td></tr>';
+      return;
     }
     tbody.innerHTML = list.map(c => {
-      const g = GRADE_LABELS[c.grade];
+      const g = GRADE_LABELS[c.computed_grade] || GRADE_LABELS.new;
+      const phone = c.phone ? c.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') : '-';
+      const lastVisit = c.last_visit?.toDate ? c.last_visit.toDate().toLocaleDateString('ko-KR') : '-';
       return `<tr>
-        <td><strong>${c.name}</strong></td>
-        <td>${c.phone}</td>
+        <td><strong>${phone}</strong></td>
         <td><span class="badge ${g.class}">${g.label}</span></td>
-        <td>${c.visits}회</td>
-        <td>${c.last}</td>
-        <td>₩${c.total.toLocaleString()}</td>
-        <td>
-          <button class="btn btn-secondary" style="padding:6px 14px;font-size:13px;" onclick="alert('상세 정보 / 메모 / 메시지 발송')">상세</button>
-        </td>
+        <td>${c.visit_count || 1}회</td>
+        <td>${lastVisit}</td>
+        <td>₩${(c.total_spent || 0).toLocaleString()}</td>
+        <td>${c.consent_marketing ? '📩' : ''} ${c.consent_night ? '🌙' : ''}</td>
       </tr>`;
     }).join('');
   }
 
-  // Recent signups for home
-  function renderRecent() {
-    const tbody = document.getElementById('recentSignups');
-    const recent = MOCK_CUSTOMERS.filter(c => c.grade === 'new').slice(0, 5);
-    tbody.innerHTML = recent.map(c => `
-      <tr>
-        <td><strong>${c.name}</strong> · ${c.phone}</td>
-        <td>${c.last}</td>
-        <td>✅</td>
-        <td>✅</td>
-        <td><button class="btn btn-secondary" style="padding:6px 14px;font-size:13px;">메모</button></td>
-      </tr>
-    `).join('');
-  }
-
-  // ====== Navigation ======
-  function navigate(page) {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelector(`[data-page="${page}"]`).classList.add('active');
-    document.getElementById('page-' + page).classList.add('active');
-  }
-  document.querySelectorAll('.nav-item').forEach(n => {
-    n.addEventListener('click', () => navigate(n.dataset.page));
+  // 검색·필터
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const filter = document.querySelector('.filter-chip.active').dataset.filter;
+    renderCustomers(filter, e.target.value);
   });
-
-  // Filter chips
   document.querySelectorAll('.filter-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
@@ -833,12 +388,22 @@
       renderCustomers(chip.dataset.filter, document.getElementById('searchInput').value);
     });
   });
-  document.getElementById('searchInput').addEventListener('input', (e) => {
-    const active = document.querySelector('.filter-chip.active').dataset.filter;
-    renderCustomers(active, e.target.value);
-  });
 
-  // Target option chips
+  // 메시지 대상 카운트
+  function updateMessageCounts() {
+    const all = CUSTOMERS.filter(c => c.consent_marketing).length;
+    const vip = CUSTOMERS.filter(c => c.consent_marketing && c.computed_grade === 'vip').length;
+    const newC = CUSTOMERS.filter(c => c.consent_marketing && c.computed_grade === 'new').length;
+    const inact = CUSTOMERS.filter(c => c.consent_marketing && c.computed_grade === 'inactive').length;
+    document.getElementById('cnt-all').textContent = all + ' 명';
+    document.getElementById('cnt-vip').textContent = vip + ' 명';
+    document.getElementById('cnt-new').textContent = newC + ' 명';
+    document.getElementById('cnt-inactive').textContent = inact + ' 명';
+    document.getElementById('cost-info').innerHTML = `
+      알림톡: <strong>약 ${(all * 9).toLocaleString()}원</strong> (건당 9원, ${all}명)<br>
+      SMS: 약 ${(all * 30).toLocaleString()}원 (건당 30원)
+    `;
+  }
   document.querySelectorAll('.target-option').forEach(opt => {
     opt.addEventListener('click', () => {
       document.querySelectorAll('.target-option').forEach(o => o.classList.remove('active'));
@@ -846,87 +411,93 @@
     });
   });
 
-  // Switch toggles
-  document.querySelectorAll('.switch').forEach(sw => {
-    sw.addEventListener('click', () => sw.classList.toggle('on'));
-  });
-
-  // ====== Charts ======
-  const goldGrad = (ctx, h) => {
-    const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, 'rgba(212,175,55,0.6)');
-    g.addColorStop(1, 'rgba(212,175,55,0.05)');
-    return g;
+  // 템플릿
+  const TEMPLATES = [
+    `[매장명]\n#{이름}님, 단골 가입을 환영합니다!\n첫 방문 시 시원한 맥주 1병 무료 서비스 드립니다 🍺\n오늘 저녁 어떠세요?\n\n수신거부: 080-XXX-XXXX`,
+    `[매장명]\n비 오는 오늘\n따끈한 전 한 접시 무료 서비스 드립니다 🌧️\n친구분들과 한 잔 어떠세요?\n\n수신거부: 080-XXX-XXXX`,
+    `[매장명]\nVIP 고객님께만 드리는 특별 혜택!\n이번 주 양주 1병 서비스 ⭐\n예약 환영합니다.\n\n수신거부: 080-XXX-XXXX`,
+    `[매장명]\n오랜만이에요~\n한 달 만에 다시 오시면\n안주 1접시 무료 드릴게요 💝\n\n수신거부: 080-XXX-XXXX`
+  ];
+  window.loadTemplate = (idx) => {
+    document.getElementById('msgContent').value = TEMPLATES[idx];
   };
 
-  setTimeout(() => {
-    // Signup chart (home)
-    const c1 = document.getElementById('signupChart').getContext('2d');
-    new Chart(c1, {
-      type: 'line',
-      data: {
-        labels: ['월','화','수','목','금','토','일'],
-        datasets: [{
-          label: '가입자',
-          data: [5,8,6,9,12,18,11],
-          borderColor: '#d4af37',
-          backgroundColor: goldGrad(c1, 180),
-          fill: true,
-          tension: 0.4,
-          pointBackgroundColor: '#d4af37',
-        }]
-      },
-      options: { responsive: true, plugins: { legend: { display: false } } }
-    });
+  // 통계 차트
+  function renderStats() {
+    setTimeout(() => {
+      const c1 = document.getElementById('gradeChart')?.getContext('2d');
+      if (c1) {
+        new Chart(c1, {
+          type: 'doughnut',
+          data: {
+            labels: ['VIP', '단골', '신규', '이탈'],
+            datasets: [{
+              data: [
+                CUSTOMERS.filter(c => c.computed_grade === 'vip').length,
+                CUSTOMERS.filter(c => c.computed_grade === 'regular').length,
+                CUSTOMERS.filter(c => c.computed_grade === 'new').length,
+                CUSTOMERS.filter(c => c.computed_grade === 'inactive').length
+              ],
+              backgroundColor: ['#d4af37', '#2575c4', '#2ea043', '#aaa']
+            }]
+          }, options: { responsive: true }
+        });
+      }
+      // 최근 7일
+      const c2 = document.getElementById('signupChart')?.getContext('2d');
+      if (c2) {
+        const days = [];
+        const counts = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0);
+          const dEnd = d.getTime() + 24*60*60*1000;
+          days.push((d.getMonth()+1) + '/' + d.getDate());
+          counts.push(CUSTOMERS.filter(c => {
+            const ms = c.created_at?.toMillis() || 0;
+            return ms >= d.getTime() && ms < dEnd;
+          }).length);
+        }
+        new Chart(c2, {
+          type: 'line',
+          data: { labels: days, datasets: [{ label: '가입자', data: counts, borderColor: '#d4af37', backgroundColor: 'rgba(212,175,55,0.2)', fill: true, tension: 0.4 }] },
+          options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+      }
+    }, 100);
+  }
 
-    // Monthly chart
-    const c2 = document.getElementById('monthlyChart')?.getContext('2d');
-    if (c2) new Chart(c2, {
-      type: 'bar',
-      data: {
-        labels: ['11월','12월','1월','2월','3월','4월'],
-        datasets: [{
-          label: '신규 가입자',
-          data: [42, 58, 65, 71, 84, 92],
-          backgroundColor: '#d4af37',
-          borderRadius: 8
-        }]
-      },
-      options: { responsive: true, plugins: { legend: { display: false } } }
+  // 네비게이션
+  function setupNav() {
+    document.querySelectorAll('.nav-item').forEach(n => {
+      n.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        n.classList.add('active');
+        document.getElementById('page-' + n.dataset.page).classList.add('active');
+      });
     });
+  }
 
-    // Grade chart
-    const c3 = document.getElementById('gradeChart')?.getContext('2d');
-    if (c3) new Chart(c3, {
-      type: 'doughnut',
-      data: {
-        labels: ['VIP', '단골', '신규', '이탈'],
-        datasets: [{
-          data: [34, 152, 89, 212],
-          backgroundColor: ['#d4af37', '#2575c4', '#2ea043', '#aaa']
-        }]
-      },
-      options: { responsive: true }
-    });
+  // 설정 저장
+  document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+    const name = document.getElementById('setting-name').value.trim();
+    const rouletteUrl = document.getElementById('setting-roulette-url').value.trim();
+    try {
+      await setDoc(doc(db, 'stores', STORE_ID), {
+        name, rouletteUrl
+      }, { merge: true });
+      alert('저장되었습니다.');
+      document.getElementById('sidebarStoreName').textContent = name;
+    } catch (e) {
+      alert('저장 실패: ' + e.message);
+    }
+  });
 
-    // Conversion chart
-    const c4 = document.getElementById('conversionChart')?.getContext('2d');
-    if (c4) new Chart(c4, {
-      type: 'bar',
-      data: {
-        labels: ['1주차', '2주차', '3주차', '4주차'],
-        datasets: [
-          { label: '발송 건수', data: [487, 487, 487, 487], backgroundColor: '#aaa', borderRadius: 6 },
-          { label: '방문 전환', data: [42, 58, 51, 67], backgroundColor: '#d4af37', borderRadius: 6 }
-        ]
-      },
-      options: { responsive: true }
-    });
-  }, 100);
-
-  // Init
-  renderCustomers();
-  renderRecent();
+  // 로그아웃
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await signOut(auth);
+    window.location.href = '/login.html';
+  });
 </script>
 
 </body>

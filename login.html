@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>매장 사장님 로그인 — Dreammaker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0a; color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .card {
+    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 20px;
+    padding: 40px 32px; max-width: 420px; width: 100%;
+  }
+  .logo {
+    width: 72px; height: 72px; margin: 0 auto 20px; border-radius: 50%;
+    background: linear-gradient(135deg, #d4af37, #f5d97a);
+    display: flex; align-items: center; justify-content: center; font-size: 32px;
+  }
+  h1 { font-size: 24px; font-weight: 800; color: #f5d97a; text-align: center; margin-bottom: 8px; }
+  .subtitle { font-size: 14px; color: #888; text-align: center; margin-bottom: 32px; }
+  label { display: block; font-size: 14px; color: #ccc; margin-bottom: 8px; font-weight: 600; }
+  input {
+    width: 100%; padding: 16px; border: 2px solid #333; border-radius: 12px;
+    background: #0f0f0f; color: #fff; font-size: 16px; margin-bottom: 16px;
+  }
+  input:focus { outline: none; border-color: #d4af37; }
+  button {
+    width: 100%; padding: 18px; border: none; border-radius: 12px; cursor: pointer;
+    background: linear-gradient(135deg, #d4af37, #f5d97a); color: #000;
+    font-size: 17px; font-weight: 800; margin-top: 8px;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .error { background: #4a1a1a; border: 1px solid #8a3a3a; color: #ff9999; padding: 12px; border-radius: 10px; font-size: 14px; margin-top: 12px; display: none; }
+  .error.show { display: block; }
+  .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #555; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">🔐</div>
+  <h1>매장 사장님 로그인</h1>
+  <div class="subtitle">단골 관리 시스템</div>
+
+  <label>이메일</label>
+  <input type="email" id="email" placeholder="owner@example.com" autocomplete="email">
+
+  <label>비밀번호</label>
+  <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+
+  <button id="loginBtn">로그인</button>
+
+  <div class="error" id="error"></div>
+
+  <div class="footer">
+    계정 발급은 PG 운영자에게 문의<br>
+    <a href="/" style="color: #888; margin-top: 8px; display: inline-block;">← 손님 가입 페이지로</a>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db } from './firebase-config.js';
+  import { signInWithEmailAndPassword, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { doc, getDoc }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  // 이미 로그인되어있으면 자동으로 관리 페이지로
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const ownerDoc = await getDoc(doc(db, 'shop_owners', user.uid));
+      if (ownerDoc.exists()) {
+        const data = ownerDoc.data();
+        if (data.role === 'super_admin') {
+          window.location.href = '/super-admin.html';
+        } else {
+          window.location.href = '/index1.html?store=' + data.store_id;
+        }
+      }
+    }
+  });
+
+  const errorEl = document.getElementById('error');
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.classList.add('show');
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim();
+    const pw = document.getElementById('password').value;
+    if (!email || !pw) { showError('이메일과 비밀번호를 입력하세요.'); return; }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, pw);
+      // onAuthStateChanged가 자동으로 리디렉션 처리
+    } catch (e) {
+      let msg = '로그인 실패';
+      if (e.code === 'auth/invalid-credential') msg = '이메일 또는 비밀번호가 잘못되었습니다.';
+      else if (e.code === 'auth/user-not-found') msg = '등록되지 않은 이메일입니다.';
+      else if (e.code === 'auth/wrong-password') msg = '비밀번호가 틀렸습니다.';
+      else if (e.code === 'auth/invalid-email') msg = '이메일 형식이 올바르지 않습니다.';
+      else msg = '오류: ' + e.message;
+      showError(msg);
+    }
+  });
+
+  // 엔터키로 로그인
+  document.getElementById('password').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') document.getElementById('loginBtn').click();
+  });
+</script>
+
+</body>
+</html>
