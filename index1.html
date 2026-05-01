@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>○○노래주점 — 단골관리</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: #f4f5f7;
+    color: #222;
+    font-size: 16px;
+  }
+  .app {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: 240px;
+    background: #1a1a1a;
+    color: #fff;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin-bottom: 32px;
+  }
+  .sidebar-logo .icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #d4af37 0%, #f5d97a 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .sidebar-logo .name {
+    font-size: 17px;
+    font-weight: 700;
+    color: #f5d97a;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 16px;
+    margin-bottom: 4px;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { background: #252525; color: #fff; }
+  .nav-item.active {
+    background: linear-gradient(135deg, #d4af37 0%, #b8932d 100%);
+    color: #000;
+    font-weight: 700;
+  }
+  .nav-item .icon { font-size: 20px; width: 24px; text-align: center; }
+
+  /* ===== Main ===== */
+  .main {
+    flex: 1;
+    padding: 28px 36px;
+    overflow-x: hidden;
+  }
+  .page-title {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 24px;
+    color: #111;
+  }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ===== Cards ===== */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .stat-card .label {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 8px;
+  }
+  .stat-card .value {
+    font-size: 32px;
+    font-weight: 800;
+    color: #111;
+  }
+  .stat-card .delta {
+    font-size: 13px;
+    color: #2ea043;
+    margin-top: 6px;
+  }
+  .stat-card .delta.down { color: #d04949; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .card-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #111;
+  }
+
+  /* ===== Quick Actions ===== */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .quick-btn {
+    padding: 18px;
+    background: #fafafa;
+    border: 2px solid #eee;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .quick-btn:hover {
+    background: #fff8e1;
+    border-color: #d4af37;
+  }
+  .quick-btn .icon {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  /* ===== Customer Table ===== */
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .search-input {
+    flex: 1;
+    min-width: 240px;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 15px;
+  }
+  .search-input:focus { outline: none; border-color: #d4af37; }
+  .filter-chip {
+    padding: 10px 16px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .filter-chip.active {
+    background: #1a1a1a;
+    color: #f5d97a;
+    border-color: #1a1a1a;
+  }
+  table {
+    width: 100%;
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border-collapse: collapse;
+  }
+  th, td {
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 15px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  th {
+    background: #fafafa;
+    font-weight: 700;
+    color: #555;
+    font-size: 14px;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .badge-vip { background: #fff0d6; color: #b8860b; }
+  .badge-regular { background: #e8f4fd; color: #2575c4; }
+  .badge-new { background: #e8f8e8; color: #2ea043; }
+  .badge-inactive { background: #f4f4f4; color: #888; }
+
+  /* ===== Buttons ===== */
+  .btn {
+    padding: 12px 22px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #d4af37 0%, #b8932d 100%);
+    color: #000;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+  }
+  .btn-danger { background: #fde8e8; color: #d04949; }
+
+  /* ===== Message Composer ===== */
+  .composer-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 20px;
+  }
+  .form-group {
+    margin-bottom: 18px;
+  }
+  .form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #555;
+    margin-bottom: 8px;
+  }
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none; border-color: #d4af37;
+  }
+  .form-textarea {
+    min-height: 140px;
+    resize: vertical;
+  }
+  .target-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .target-option {
+    padding: 14px;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .target-option.active {
+    border-color: #d4af37;
+    background: #fff8e1;
+  }
+  .target-option .count {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  /* ===== Phone Preview ===== */
+  .phone-preview {
+    background: #1a1a1a;
+    border-radius: 24px;
+    padding: 16px;
+    color: #fff;
+  }
+  .phone-screen {
+    background: #b6cad6;
+    border-radius: 14px;
+    padding: 20px 14px;
+    min-height: 400px;
+  }
+  .kakao-bubble {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    color: #222;
+    font-size: 14px;
+    line-height: 1.6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .kakao-bubble .store {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+
+  /* ===== Templates ===== */
+  .template-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .template-item {
+    padding: 14px;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .template-item:hover {
+    border-color: #d4af37;
+    background: #fff8e1;
+  }
+  .template-item .title {
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .template-item .preview {
+    font-size: 13px;
+    color: #888;
+  }
+
+  /* ===== Event Page ===== */
+  .event-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .event-icon {
+    width: 60px; height: 60px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #fff0d6 0%, #ffd97a 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .event-info { flex: 1; }
+  .event-info .title { font-size: 16px; font-weight: 700; }
+  .event-info .meta { font-size: 13px; color: #888; margin-top: 4px; }
+  .switch {
+    position: relative;
+    width: 50px;
+    height: 28px;
+    background: #ddd;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .switch.on { background: #d4af37; }
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    transition: left 0.2s;
+  }
+  .switch.on::after { left: 25px; }
+
+  /* ===== Modal ===== */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.show { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    width: 90%;
+    max-width: 480px;
+  }
+  .modal-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 70px; padding: 16px 8px; }
+    .sidebar-logo .name { display: none; }
+    .nav-item span:not(.icon) { display: none; }
+    .nav-item { justify-content: center; }
+    .main { padding: 20px 16px; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .composer-grid { grid-template-columns: 1fr; }
+    .quick-actions { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="icon">🎤</div>
+      <div class="name">○○노래주점</div>
+    </div>
+    <div class="nav-item active" data-page="home">
+      <span class="icon">🏠</span><span>홈</span>
+    </div>
+    <div class="nav-item" data-page="customers">
+      <span class="icon">👥</span><span>고객 관리</span>
+    </div>
+    <div class="nav-item" data-page="messages">
+      <span class="icon">💬</span><span>메시지 발송</span>
+    </div>
+    <div class="nav-item" data-page="events">
+      <span class="icon">🎁</span><span>이벤트 관리</span>
+    </div>
+    <div class="nav-item" data-page="stats">
+      <span class="icon">📊</span><span>통계</span>
+    </div>
+    <div class="nav-item" data-page="settings">
+      <span class="icon">⚙️</span><span>설정</span>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <main class="main">
+
+    <!-- ===== HOME ===== -->
+    <div class="page active" id="page-home">
+      <div class="page-title">오늘의 한눈에 보기</div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="label">오늘 가입한 손님</div>
+          <div class="value">12<span style="font-size:18px;color:#888;">명</span></div>
+          <div class="delta">▲ 어제보다 +3명</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">전체 단골</div>
+          <div class="value">487<span style="font-size:18px;color:#888;">명</span></div>
+          <div class="delta">▲ 이번달 +42명</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">이번 주 재방문</div>
+          <div class="value">68<span style="font-size:18px;color:#888;">명</span></div>
+          <div class="delta">▲ 지난주 +12%</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">VIP 고객</div>
+          <div class="value">34<span style="font-size:18px;color:#888;">명</span></div>
+          <div class="delta">▲ +2명</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">⚡ 빠른 작업</div>
+          <div class="quick-actions">
+            <div class="quick-btn" onclick="navigate('messages')">
+              <span class="icon">💬</span>
+              메시지 보내기
+            </div>
+            <div class="quick-btn" onclick="navigate('events')">
+              <span class="icon">🎁</span>
+              오늘의 사은품
+            </div>
+            <div class="quick-btn" onclick="navigate('customers')">
+              <span class="icon">⭐</span>
+              VIP 보기
+            </div>
+            <div class="quick-btn" onclick="alert('생일 손님 자동 추출 기능')">
+              <span class="icon">🎂</span>
+              생일 손님
+            </div>
+            <div class="quick-btn" onclick="alert('60일 무방문 이탈 손님 추출')">
+              <span class="icon">🔔</span>
+              컴백 메시지
+            </div>
+            <div class="quick-btn" onclick="alert('비 오는 날 사은품 발송')">
+              <span class="icon">🌧️</span>
+              비오는 날
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📈 최근 7일 가입자</div>
+          <canvas id="signupChart" height="180"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🆕 최근 가입한 손님</div>
+        <table>
+          <thead>
+            <tr><th>이름/전화</th><th>가입일</th><th>마케팅 동의</th><th>야간 동의</th><th></th></tr>
+          </thead>
+          <tbody id="recentSignups"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== CUSTOMERS ===== -->
+    <div class="page" id="page-customers">
+      <div class="page-title">고객 관리</div>
+
+      <div class="toolbar">
+        <input type="text" class="search-input" placeholder="🔍 이름 또는 전화번호로 검색" id="searchInput">
+        <div class="filter-chip active" data-filter="all">전체 (487)</div>
+        <div class="filter-chip" data-filter="vip">VIP (34)</div>
+        <div class="filter-chip" data-filter="regular">단골 (152)</div>
+        <div class="filter-chip" data-filter="new">신규 (89)</div>
+        <div class="filter-chip" data-filter="inactive">이탈 (212)</div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>이름</th>
+            <th>전화번호</th>
+            <th>등급</th>
+            <th>방문횟수</th>
+            <th>마지막 방문</th>
+            <th>총 매출</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="customerTable"></tbody>
+      </table>
+    </div>
+
+    <!-- ===== MESSAGES ===== -->
+    <div class="page" id="page-messages">
+      <div class="page-title">메시지 발송</div>
+
+      <div class="composer-grid">
+        <div class="card">
+          <div class="form-group">
+            <label class="form-label">📋 템플릿 선택</label>
+            <div class="template-list">
+              <div class="template-item" onclick="loadTemplate(0)">
+                <div class="title">🎉 신규 환영 메시지</div>
+                <div class="preview">○○님 가입을 환영합니다! 첫 방문 시 맥주 1병 무료...</div>
+              </div>
+              <div class="template-item" onclick="loadTemplate(1)">
+                <div class="title">🌧️ 비오는 날 사은품</div>
+                <div class="preview">오늘 같은 날엔 ○○노래주점에서 따뜻한 전과 함께...</div>
+              </div>
+              <div class="template-item" onclick="loadTemplate(2)">
+                <div class="title">⭐ VIP 전용 안내</div>
+                <div class="preview">단골 ○○님께만 드리는 특별 혜택! 양주 1병 서비스...</div>
+              </div>
+              <div class="template-item" onclick="loadTemplate(3)">
+                <div class="title">💔 이탈 고객 컴백</div>
+                <div class="preview">오랜만이에요 ○○님~ 한 달 만에 오시면 안주 무료...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <div class="form-group">
+              <label class="form-label">🎯 발송 대상</label>
+              <div class="target-options">
+                <div class="target-option active">
+                  전체 단골
+                  <div class="count">487명</div>
+                </div>
+                <div class="target-option">
+                  VIP만
+                  <div class="count">34명</div>
+                </div>
+                <div class="target-option">
+                  신규 (1회 방문)
+                  <div class="count">89명</div>
+                </div>
+                <div class="target-option">
+                  이탈 (60일+)
+                  <div class="count">212명</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">✏️ 메시지 내용</label>
+              <textarea class="form-textarea" id="msgContent" placeholder="템플릿을 선택하거나 직접 입력하세요..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">📅 발송 시간</label>
+              <select class="form-select">
+                <option>지금 즉시 발송</option>
+                <option>오늘 저녁 7시 발송 예약</option>
+                <option>내일 오전 10시 발송 예약</option>
+                <option>직접 시간 지정...</option>
+              </select>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-secondary" style="flex:1;">미리보기</button>
+              <button class="btn btn-primary" style="flex:2;" onclick="alert('발송 확인 모달 표시\n실제 운영 시: 알림톡/SMS API 호출')">📤 발송하기</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px; padding: 16px; background: #fff8e1; border-radius: 12px; font-size: 13px; color: #8a6914; line-height: 1.6;">
+            💡 <strong>발송 비용 안내</strong><br>
+            전체 단골 487명 발송 시:<br>
+            카카오 알림톡: <strong>약 4,400원</strong> (건당 9원)<br>
+            SMS 문자: 약 14,600원 (건당 30원)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== EVENTS ===== -->
+    <div class="page" id="page-events">
+      <div class="page-title">이벤트 관리</div>
+
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title">🎰 룰렛 상품 설정</div>
+        <p style="color:#888; font-size:14px; margin-bottom:12px;">큐알 가입 즉시 손님에게 제공되는 룰렛 상품 목록과 당첨 확률을 관리합니다.</p>
+        <table>
+          <thead><tr><th>상품</th><th>당첨 확률</th><th>오늘 당첨자</th><th>활성</th></tr></thead>
+          <tbody>
+            <tr><td>🍺 맥주 1병</td><td>50%</td><td>6명</td><td><div class="switch on"></div></td></tr>
+            <tr><td>🍢 안주 1접시</td><td>25%</td><td>3명</td><td><div class="switch on"></div></td></tr>
+            <tr><td>🎵 노래 추가 1곡</td><td>15%</td><td>2명</td><td><div class="switch on"></div></td></tr>
+            <tr><td>🍷 양주 1병</td><td>1%</td><td>0명</td><td><div class="switch on"></div></td></tr>
+            <tr><td>💎 당첨 (꽝없음)</td><td>9%</td><td>1명</td><td><div class="switch on"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎁 오늘의 사은품 (방문 시 자동 안내)</div>
+        <div class="event-card">
+          <div class="event-icon">🌧️</div>
+          <div class="event-info">
+            <div class="title">비 오는 날 — 따끈한 전 1접시</div>
+            <div class="meta">강수확률 60% 이상 시 자동 활성화</div>
+          </div>
+          <div class="switch on"></div>
+        </div>
+        <div class="event-card">
+          <div class="event-icon">🍺</div>
+          <div class="event-info">
+            <div class="title">월요일 — 맥주 1병 서비스</div>
+            <div class="meta">매주 월요일 자동</div>
+          </div>
+          <div class="switch on"></div>
+        </div>
+        <div class="event-card">
+          <div class="event-icon">🎂</div>
+          <div class="event-info">
+            <div class="title">생일 손님 — 양주 1병 서비스</div>
+            <div class="meta">생일 당월 자동 메시지 + 매장 알림</div>
+          </div>
+          <div class="switch on"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STATS ===== -->
+    <div class="page" id="page-stats">
+      <div class="page-title">통계</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">월별 가입자 추이</div>
+          <canvas id="monthlyChart" height="220"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">고객 등급 분포</div>
+          <canvas id="gradeChart" height="220"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">메시지 발송 vs 방문 전환</div>
+        <canvas id="conversionChart" height="180"></canvas>
+      </div>
+    </div>
+
+    <!-- ===== SETTINGS ===== -->
+    <div class="page" id="page-settings">
+      <div class="page-title">설정</div>
+      <div class="card">
+        <div class="card-title">매장 정보</div>
+        <div class="form-group">
+          <label class="form-label">매장 이름</label>
+          <input class="form-input" value="○○노래주점">
+        </div>
+        <div class="form-group">
+          <label class="form-label">큐알 주소</label>
+          <input class="form-input" value="https://your-domain.com/store/001" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">알림톡 발신 프로필 (카카오비즈)</label>
+          <input class="form-input" placeholder="발신 프로필 키 입력">
+        </div>
+        <button class="btn btn-primary">저장</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ====== Mock Data ======
+  const MOCK_CUSTOMERS = [
+    { name: '김○수', phone: '010-1234-5678', grade: 'vip', visits: 28, last: '오늘', total: 5400000 },
+    { name: '박○철', phone: '010-2345-6789', grade: 'vip', visits: 22, last: '어제', total: 4200000 },
+    { name: '이○희', phone: '010-3456-7890', grade: 'regular', visits: 9, last: '3일 전', total: 1800000 },
+    { name: '정○호', phone: '010-4567-8901', grade: 'regular', visits: 7, last: '1주 전', total: 1300000 },
+    { name: '최○숙', phone: '010-5678-9012', grade: 'new', visits: 1, last: '오늘', total: 240000 },
+    { name: '강○민', phone: '010-6789-0123', grade: 'new', visits: 1, last: '어제', total: 180000 },
+    { name: '윤○진', phone: '010-7890-1234', grade: 'inactive', visits: 4, last: '3개월 전', total: 720000 },
+    { name: '한○석', phone: '010-8901-2345', grade: 'regular', visits: 12, last: '5일 전', total: 2400000 },
+  ];
+
+  const GRADE_LABELS = {
+    vip: { label: 'VIP', class: 'badge-vip' },
+    regular: { label: '단골', class: 'badge-regular' },
+    new: { label: '신규', class: 'badge-new' },
+    inactive: { label: '이탈', class: 'badge-inactive' }
+  };
+
+  // ====== Templates ======
+  const TEMPLATES = [
+    `[○○노래주점]\n#{이름}님, 단골 가입을 환영합니다!\n첫 방문 시 시원한 맥주 1병 무료 서비스 드립니다 🍺\n오늘 저녁 어떠세요?\n\n수신거부: 080-XXX-XXXX`,
+    `[○○노래주점]\n#{이름}님~ 비 오는 오늘\n따끈한 전 한 접시 무료 서비스 드립니다 🌧️\n친구분들과 한 잔 어떠세요?\n\n수신거부: 080-XXX-XXXX`,
+    `[○○노래주점]\nVIP #{이름}님께만 드리는 특별 혜택!\n이번 주 양주 1병 서비스 ⭐\n예약 환영합니다.\n\n수신거부: 080-XXX-XXXX`,
+    `[○○노래주점]\n#{이름}님 오랜만이에요~\n한 달 만에 다시 오시면\n안주 1접시 무료 드릴게요 💝\n\n수신거부: 080-XXX-XXXX`
+  ];
+
+  function loadTemplate(idx) {
+    document.getElementById('msgContent').value = TEMPLATES[idx];
+  }
+
+  // ====== Render Customers ======
+  function renderCustomers(filter = 'all', search = '') {
+    const tbody = document.getElementById('customerTable');
+    let list = MOCK_CUSTOMERS;
+    if (filter !== 'all') list = list.filter(c => c.grade === filter);
+    if (search) {
+      const s = search.toLowerCase();
+      list = list.filter(c => c.name.includes(search) || c.phone.includes(search));
+    }
+    tbody.innerHTML = list.map(c => {
+      const g = GRADE_LABELS[c.grade];
+      return `<tr>
+        <td><strong>${c.name}</strong></td>
+        <td>${c.phone}</td>
+        <td><span class="badge ${g.class}">${g.label}</span></td>
+        <td>${c.visits}회</td>
+        <td>${c.last}</td>
+        <td>₩${c.total.toLocaleString()}</td>
+        <td>
+          <button class="btn btn-secondary" style="padding:6px 14px;font-size:13px;" onclick="alert('상세 정보 / 메모 / 메시지 발송')">상세</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Recent signups for home
+  function renderRecent() {
+    const tbody = document.getElementById('recentSignups');
+    const recent = MOCK_CUSTOMERS.filter(c => c.grade === 'new').slice(0, 5);
+    tbody.innerHTML = recent.map(c => `
+      <tr>
+        <td><strong>${c.name}</strong> · ${c.phone}</td>
+        <td>${c.last}</td>
+        <td>✅</td>
+        <td>✅</td>
+        <td><button class="btn btn-secondary" style="padding:6px 14px;font-size:13px;">메모</button></td>
+      </tr>
+    `).join('');
+  }
+
+  // ====== Navigation ======
+  function navigate(page) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelector(`[data-page="${page}"]`).classList.add('active');
+    document.getElementById('page-' + page).classList.add('active');
+  }
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.addEventListener('click', () => navigate(n.dataset.page));
+  });
+
+  // Filter chips
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderCustomers(chip.dataset.filter, document.getElementById('searchInput').value);
+    });
+  });
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const active = document.querySelector('.filter-chip.active').dataset.filter;
+    renderCustomers(active, e.target.value);
+  });
+
+  // Target option chips
+  document.querySelectorAll('.target-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.target-option').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+    });
+  });
+
+  // Switch toggles
+  document.querySelectorAll('.switch').forEach(sw => {
+    sw.addEventListener('click', () => sw.classList.toggle('on'));
+  });
+
+  // ====== Charts ======
+  const goldGrad = (ctx, h) => {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, 'rgba(212,175,55,0.6)');
+    g.addColorStop(1, 'rgba(212,175,55,0.05)');
+    return g;
+  };
+
+  setTimeout(() => {
+    // Signup chart (home)
+    const c1 = document.getElementById('signupChart').getContext('2d');
+    new Chart(c1, {
+      type: 'line',
+      data: {
+        labels: ['월','화','수','목','금','토','일'],
+        datasets: [{
+          label: '가입자',
+          data: [5,8,6,9,12,18,11],
+          borderColor: '#d4af37',
+          backgroundColor: goldGrad(c1, 180),
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#d4af37',
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    // Monthly chart
+    const c2 = document.getElementById('monthlyChart')?.getContext('2d');
+    if (c2) new Chart(c2, {
+      type: 'bar',
+      data: {
+        labels: ['11월','12월','1월','2월','3월','4월'],
+        datasets: [{
+          label: '신규 가입자',
+          data: [42, 58, 65, 71, 84, 92],
+          backgroundColor: '#d4af37',
+          borderRadius: 8
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    // Grade chart
+    const c3 = document.getElementById('gradeChart')?.getContext('2d');
+    if (c3) new Chart(c3, {
+      type: 'doughnut',
+      data: {
+        labels: ['VIP', '단골', '신규', '이탈'],
+        datasets: [{
+          data: [34, 152, 89, 212],
+          backgroundColor: ['#d4af37', '#2575c4', '#2ea043', '#aaa']
+        }]
+      },
+      options: { responsive: true }
+    });
+
+    // Conversion chart
+    const c4 = document.getElementById('conversionChart')?.getContext('2d');
+    if (c4) new Chart(c4, {
+      type: 'bar',
+      data: {
+        labels: ['1주차', '2주차', '3주차', '4주차'],
+        datasets: [
+          { label: '발송 건수', data: [487, 487, 487, 487], backgroundColor: '#aaa', borderRadius: 6 },
+          { label: '방문 전환', data: [42, 58, 51, 67], backgroundColor: '#d4af37', borderRadius: 6 }
+        ]
+      },
+      options: { responsive: true }
+    });
+  }, 100);
+
+  // Init
+  renderCustomers();
+  renderRecent();
+</script>
+
+</body>
+</html>
