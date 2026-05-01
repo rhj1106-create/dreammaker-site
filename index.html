@@ -306,15 +306,19 @@
   });
 
   document.getElementById('rouletteBtn').addEventListener('click', () => {
+    const phone = phoneInput.value.replace(/-/g, '');
+    let targetUrl;
     if (storeData.rouletteUrl && storeData.rouletteUrl.startsWith('http')) {
-      const phone = phoneInput.value.replace(/-/g, '');
+      // 외부 룰렛 URL (오픈클로 등 — 설정 화면에서 입력한 경우)
       const url = new URL(storeData.rouletteUrl);
       url.searchParams.set('store', STORE_ID);
       url.searchParams.set('phone', phone);
-      window.location.href = url.toString();
+      targetUrl = url.toString();
     } else {
-      alert('룰렛 URL이 아직 등록되지 않았습니다.\n매장 사장님께 문의해주세요.');
+      // 기본 — 우리 자체 룰렛 페이지 사용
+      targetUrl = '/roulette.html?store=' + encodeURIComponent(STORE_ID) + '&phone=' + encodeURIComponent(phone);
     }
+    window.location.href = targetUrl;
   });
 </script>
 
