@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>행운의 룰렛 — 단골 사은품</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    background: #0a0a0a;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .store-name {
+    font-size: 18px;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  .title {
+    font-size: 32px;
+    font-weight: 900;
+    color: #f5d97a;
+    text-shadow: 0 0 30px rgba(245, 217, 122, 0.4);
+    margin-bottom: 6px;
+    letter-spacing: -1px;
+  }
+  .subtitle {
+    font-size: 15px;
+    color: #aaa;
+  }
+
+  /* 룰렛 컨테이너 */
+  .wheel-container {
+    position: relative;
+    width: 340px;
+    height: 340px;
+    margin: 20px auto 32px;
+    filter: drop-shadow(0 10px 40px rgba(212, 175, 55, 0.4));
+  }
+  .wheel-pointer {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 32px solid #f5d97a;
+    z-index: 10;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+  }
+  .wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    transition: transform 5s cubic-bezier(0.17, 0.67, 0.13, 1);
+    transform: rotate(0deg);
+    border: 6px solid #d4af37;
+    box-shadow:
+      inset 0 0 30px rgba(0,0,0,0.5),
+      0 0 0 3px #1a1a1a,
+      0 0 0 6px #b8932d;
+  }
+  .wheel-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #f5d97a 0%, #d4af37 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    z-index: 5;
+  }
+
+  .spin-btn {
+    width: 100%;
+    max-width: 340px;
+    padding: 22px;
+    background: linear-gradient(135deg, #d4af37 0%, #f5d97a 100%);
+    border: none;
+    border-radius: 16px;
+    color: #000;
+    font-size: 22px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4);
+    transition: transform 0.1s;
+    margin-bottom: 16px;
+  }
+  .spin-btn:active { transform: scale(0.97); }
+  .spin-btn:disabled {
+    background: #333;
+    color: #666;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  .info-box {
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+    line-height: 1.7;
+    margin-top: 16px;
+  }
+  .info-box strong { color: #d4af37; }
+
+  /* 결과 모달 */
+  .result-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: fadeIn 0.4s ease;
+  }
+  .result-overlay.show { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .result-card {
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .result-confetti {
+    font-size: 56px;
+    margin-bottom: 16px;
+  }
+  .result-label {
+    font-size: 18px;
+    color: #d4af37;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .result-prize {
+    font-size: 56px;
+    margin: 16px 0;
+  }
+  .result-name {
+    font-size: 36px;
+    font-weight: 900;
+    color: #f5d97a;
+    margin-bottom: 12px;
+    letter-spacing: -1px;
+  }
+  .result-msg {
+    font-size: 16px;
+    color: #ccc;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  .show-staff {
+    background: linear-gradient(135deg, #2a1f0a 0%, #4a3a1a 100%);
+    border: 2px solid #d4af37;
+    border-radius: 16px;
+    padding: 20px;
+    margin: 24px 0;
+  }
+  .show-staff-title {
+    font-size: 14px;
+    color: #d4af37;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .show-staff-msg {
+    font-size: 18px;
+    color: #fff;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .show-staff-time {
+    font-size: 13px;
+    color: #888;
+  }
+  .close-btn {
+    width: 100%;
+    padding: 18px;
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* 에러 화면 */
+  .error-screen {
+    text-align: center;
+    padding: 60px 24px;
+    color: #888;
+  }
+  .error-icon { font-size: 60px; margin-bottom: 20px; }
+  .error-title { font-size: 22px; color: #ff9999; margin-bottom: 12px; }
+  .error-msg { font-size: 16px; line-height: 1.6; }
+
+  /* 로딩 */
+  .loading-overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7); z-index: 200;
+    align-items: center; justify-content: center; flex-direction: column;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 50px; height: 50px;
+    border: 4px solid #333;
+    border-top-color: #d4af37;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="main-screen">
+  <div class="header">
+    <div class="store-name" id="storeName">매장 정보 로딩 중...</div>
+    <div class="title">🎰 행운의 룰렛</div>
+    <div class="subtitle">버튼을 눌러 사은품을 받아보세요!</div>
+  </div>
+
+  <div class="wheel-container">
+    <div class="wheel-pointer"></div>
+    <svg class="wheel" id="wheel" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- 동적으로 생성됨 -->
+    </svg>
+    <div class="wheel-center">🎲</div>
+  </div>
+
+  <button class="spin-btn" id="spinBtn">🎯 룰렛 돌리기!</button>
+
+  <div class="info-box">
+    <strong>🎁 상품 안내</strong><br>
+    🍺 맥주 1병 / 🍺🍺 맥주 2병 / 🦑 마른안주(오징어)<br>
+    🐟 한치 한마리 / 🥚 계란말이<br>
+    🍫 초콜릿 / 🍪 과자·사탕
+  </div>
+</div>
+
+<!-- 에러 화면 -->
+<div class="wrap error-screen" id="error-screen" style="display:none;">
+  <div class="error-icon">⚠️</div>
+  <div class="error-title">잘못된 접근입니다</div>
+  <div class="error-msg" id="error-msg">
+    매장 정보가 확인되지 않습니다.<br>
+    매장의 큐알 코드를 다시 스캔해주세요.
+  </div>
+</div>
+
+<!-- 결과 모달 -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <div class="result-confetti">🎉✨🎉</div>
+    <div class="result-label">★ 당첨 ★</div>
+    <div class="result-prize" id="result-emoji">🍺</div>
+    <div class="result-name" id="result-name">상품명</div>
+    <div class="result-msg">축하합니다!<br>아래 화면을 직원에게 보여주세요</div>
+
+    <div class="show-staff">
+      <div class="show-staff-title">📱 직원 확인용</div>
+      <div class="show-staff-msg" id="staff-prize">상품: 맥주 1병</div>
+      <div class="show-staff-time" id="staff-time">받은 시간: 2026-05-01 15:30</div>
+    </div>
+
+    <button class="close-btn" onclick="window.location.reload()">확인</button>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div style="color:#fff; margin-top:16px;">결과 저장 중...</div>
+</div>
+
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  // ====== URL 파라미터 ======
+  const urlParams = new URLSearchParams(window.location.search);
+  const STORE_ID = urlParams.get('store');
+  const PHONE = urlParams.get('phone');
+
+  if (!STORE_ID || !PHONE) {
+    document.getElementById('main-screen').style.display = 'none';
+    document.getElementById('error-screen').style.display = 'flex';
+    document.getElementById('error-msg').innerHTML =
+      '매장 정보 또는 회원 정보가 누락되었습니다.<br>가입 페이지에서 다시 시작해주세요.';
+    throw new Error('Missing params');
+  }
+
+  // ====== 상품 정의 ======
+  // 8개 슬롯 (각 45도)
+  // 가중치(weight)는 당첨 확률 — 합이 100이 되도록
+  const PRIZES = [
+    { name: '맥주 1병',         emoji: '🍺',   weight: 25, color1: '#d4af37', color2: '#b8932d' },
+    { name: '초콜릿',           emoji: '🍫',   weight: 20, color1: '#5a3a1a', color2: '#3a2a0a' },
+    { name: '마른안주 (오징어)', emoji: '🦑',   weight: 18, color1: '#c9a035', color2: '#a07a1f' },
+    { name: '과자/사탕',         emoji: '🍪',   weight: 15, color1: '#7a5a2a', color2: '#5a3a1a' },
+    { name: '계란말이',          emoji: '🥚',   weight: 10, color1: '#e8c468', color2: '#c9a035' },
+    { name: '맥주 2병',          emoji: '🍺🍺', weight:  7, color1: '#f5d97a', color2: '#d4af37' },
+    { name: '한치 한마리',       emoji: '🐟',   weight:  5, color1: '#a07a1f', color2: '#7a5a0f' }
+  ];
+  // 합계 = 100
+
+  // 룰렛 시각 슬롯 (8개로 시각화 — 1번 상품을 두 번 배치해서 8칸)
+  const SLOTS = [
+    PRIZES[0], // 맥주 1병
+    PRIZES[1], // 초콜릿
+    PRIZES[2], // 마른안주
+    PRIZES[3], // 과자
+    PRIZES[4], // 계란말이
+    PRIZES[0], // 맥주 1병 (반복)
+    PRIZES[5], // 맥주 2병
+    PRIZES[6]  // 한치
+  ];
+
+  // ====== SVG 룰렛 그리기 ======
+  function drawWheel() {
+    const svg = document.getElementById('wheel');
+    const cx = 100, cy = 100, r = 100;
+    const slotsCount = SLOTS.length;
+    const angleStep = 360 / slotsCount;
+
+    let svgContent = '';
+    SLOTS.forEach((slot, i) => {
+      const startAngle = i * angleStep - 90;  // -90 to start from top
+      const endAngle = (i + 1) * angleStep - 90;
+      const startRad = (startAngle * Math.PI) / 180;
+      const endRad = (endAngle * Math.PI) / 180;
+      const x1 = cx + r * Math.cos(startRad);
+      const y1 = cy + r * Math.sin(startRad);
+      const x2 = cx + r * Math.cos(endRad);
+      const y2 = cy + r * Math.sin(endRad);
+      const largeArc = angleStep > 180 ? 1 : 0;
+
+      svgContent += `
+        <defs>
+          <linearGradient id="grad${i}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${slot.color1}"/>
+            <stop offset="100%" stop-color="${slot.color2}"/>
+          </linearGradient>
+        </defs>
+        <path d="M ${cx},${cy} L ${x1},${y1} A ${r},${r} 0 ${largeArc} 1 ${x2},${y2} Z"
+              fill="url(#grad${i})" stroke="#1a1a1a" stroke-width="1.5"/>
+      `;
+
+      // 텍스트와 이모지 배치
+      const midAngle = (startAngle + endAngle) / 2;
+      const midRad = (midAngle * Math.PI) / 180;
+      const textR = r * 0.65;
+      const tx = cx + textR * Math.cos(midRad);
+      const ty = cy + textR * Math.sin(midRad);
+
+      svgContent += `
+        <text x="${tx}" y="${ty}" font-size="14" fill="#000" text-anchor="middle"
+              dominant-baseline="central"
+              transform="rotate(${midAngle + 90} ${tx} ${ty})"
+              font-weight="700">
+          ${slot.emoji}
+        </text>
+        <text x="${tx}" y="${ty + 14}" font-size="6" fill="#000" text-anchor="middle"
+              dominant-baseline="central"
+              transform="rotate(${midAngle + 90} ${tx} ${ty + 14})"
+              font-weight="700">
+          ${slot.name.length > 6 ? slot.name.substring(0, 6) : slot.name}
+        </text>
+      `;
+    });
+
+    svg.innerHTML = svgContent;
+  }
+  drawWheel();
+
+  // ====== 매장 정보 로드 ======
+  let storeName = '○○노래주점';
+  async function loadStore() {
+    try {
+      const storeDoc = await getDoc(doc(db, 'stores', STORE_ID));
+      if (storeDoc.exists()) {
+        storeName = storeDoc.data().name || storeName;
+      }
+      document.getElementById('storeName').textContent = storeName;
+    } catch (e) {
+      document.getElementById('storeName').textContent = storeName;
+    }
+  }
+  loadStore();
+
+  // ====== 가중치 기반 상품 선택 ======
+  function pickPrize() {
+    const total = PRIZES.reduce((s, p) => s + p.weight, 0);
+    let r = Math.random() * total;
+    for (const prize of PRIZES) {
+      r -= prize.weight;
+      if (r <= 0) return prize;
+    }
+    return PRIZES[0];
+  }
+
+  // ====== 슬롯 인덱스 찾기 (당첨 상품의 SVG 슬롯) ======
+  function findSlotIndex(prize) {
+    // SLOTS에서 해당 상품의 위치들 (맥주 1병은 0, 5에 두 번)
+    const indices = [];
+    SLOTS.forEach((s, i) => {
+      if (s.name === prize.name) indices.push(i);
+    });
+    return indices[Math.floor(Math.random() * indices.length)];
+  }
+
+  // ====== 룰렛 회전 ======
+  let isSpinning = false;
+  document.getElementById('spinBtn').addEventListener('click', async () => {
+    if (isSpinning) return;
+    isSpinning = true;
+
+    const btn = document.getElementById('spinBtn');
+    btn.disabled = true;
+    btn.textContent = '🎰 돌아가는 중...';
+
+    // 1. 가중치로 상품 결정
+    const prize = pickPrize();
+    const slotIdx = findSlotIndex(prize);
+
+    // 2. 룰렛 회전 각도 계산
+    // 슬롯이 0번부터 시계방향으로 배치, 포인터는 위(12시 방향)
+    // slotIdx의 중앙이 포인터 위치(0도)에 오도록 회전
+    const slotsCount = SLOTS.length;
+    const anglePerSlot = 360 / slotsCount;
+    const targetAngle = -(slotIdx * anglePerSlot + anglePerSlot / 2);
+    // 5바퀴 + 목표 위치
+    const totalRotation = 360 * 5 + targetAngle;
+
+    const wheel = document.getElementById('wheel');
+    wheel.style.transition = 'transform 5s cubic-bezier(0.17, 0.67, 0.13, 1)';
+    wheel.style.transform = `rotate(${totalRotation}deg)`;
+
+    // 3. 5초 후 결과 저장 + 모달
+    setTimeout(async () => {
+      // Firestore에 결과 저장
+      try {
+        document.getElementById('loading-overlay').classList.add('show');
+
+        // 룰렛 이력 저장
+        const historyRef = collection(db, 'stores', STORE_ID, 'customers', PHONE, 'roulette_history');
+        await addDoc(historyRef, {
+          prize_name: prize.name,
+          prize_emoji: prize.emoji,
+          spun_at: serverTimestamp(),
+          claimed: false  // 직원이 상품 제공 시 true로 변경
+        });
+
+        // 손님 정보에 마지막 룰렛 결과 기록
+        await setDoc(doc(db, 'stores', STORE_ID, 'customers', PHONE), {
+          last_roulette: prize.name,
+          last_roulette_at: serverTimestamp()
+        }, { merge: true });
+
+        document.getElementById('loading-overlay').classList.remove('show');
+      } catch (e) {
+        console.error('결과 저장 실패:', e);
+        document.getElementById('loading-overlay').classList.remove('show');
+        // 저장 실패해도 결과는 보여줌
+      }
+
+      // 결과 화면 표시
+      document.getElementById('result-emoji').textContent = prize.emoji;
+      document.getElementById('result-name').textContent = prize.name;
+      document.getElementById('staff-prize').textContent = '상품: ' + prize.name + ' ' + prize.emoji;
+      document.getElementById('staff-time').textContent = '받은 시간: ' + new Date().toLocaleString('ko-KR');
+      document.getElementById('result-overlay').classList.add('show');
+
+      btn.textContent = '🎯 룰렛 돌리기!';
+      isSpinning = false;
+    }, 5100);
+  });
+</script>
+
+</body>
+</html>
