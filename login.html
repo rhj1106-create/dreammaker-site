@@ -16,49 +16,57 @@
     padding: 40px 32px; max-width: 420px; width: 100%;
   }
   .logo {
-    width: 72px; height: 72px; margin: 0 auto 20px; border-radius: 50%;
+    width: 80px; height: 80px; margin: 0 auto 20px; border-radius: 50%;
     background: linear-gradient(135deg, #d4af37, #f5d97a);
-    display: flex; align-items: center; justify-content: center; font-size: 32px;
+    display: flex; align-items: center; justify-content: center; font-size: 36px;
   }
-  h1 { font-size: 24px; font-weight: 800; color: #f5d97a; text-align: center; margin-bottom: 8px; }
-  .subtitle { font-size: 14px; color: #888; text-align: center; margin-bottom: 32px; }
-  label { display: block; font-size: 14px; color: #ccc; margin-bottom: 8px; font-weight: 600; }
+  h1 { font-size: 26px; font-weight: 800; color: #f5d97a; text-align: center; margin-bottom: 8px; }
+  .subtitle { font-size: 15px; color: #888; text-align: center; margin-bottom: 32px; }
+  label { display: block; font-size: 16px; color: #ccc; margin-bottom: 10px; font-weight: 700; }
   input {
-    width: 100%; padding: 16px; border: 2px solid #333; border-radius: 12px;
-    background: #0f0f0f; color: #fff; font-size: 16px; margin-bottom: 16px;
+    width: 100%; padding: 18px; border: 2px solid #333; border-radius: 12px;
+    background: #0f0f0f; color: #fff; font-size: 18px; margin-bottom: 18px;
   }
   input:focus { outline: none; border-color: #d4af37; }
+  input::placeholder { color: #555; }
   button {
-    width: 100%; padding: 18px; border: none; border-radius: 12px; cursor: pointer;
+    width: 100%; padding: 22px; border: none; border-radius: 14px; cursor: pointer;
     background: linear-gradient(135deg, #d4af37, #f5d97a); color: #000;
-    font-size: 17px; font-weight: 800; margin-top: 8px;
+    font-size: 20px; font-weight: 800; margin-top: 8px;
+    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.35);
   }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
-  .error { background: #4a1a1a; border: 1px solid #8a3a3a; color: #ff9999; padding: 12px; border-radius: 10px; font-size: 14px; margin-top: 12px; display: none; }
+  .error { background: #4a1a1a; border: 1px solid #8a3a3a; color: #ff9999; padding: 14px; border-radius: 10px; font-size: 14px; margin-top: 16px; display: none; line-height: 1.5; }
   .error.show { display: block; }
-  .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #555; }
+  .footer { text-align: center; margin-top: 28px; font-size: 13px; color: #555; line-height: 1.7; }
+  .footer a { color: #888; text-decoration: none; }
+  .help-note { background: #1f1a0a; border: 1px solid #3a2f1a; border-radius: 10px; padding: 12px; font-size: 13px; color: #aaa; margin-top: 16px; line-height: 1.5; }
 </style>
 </head>
 <body>
 
 <div class="card">
   <div class="logo">🔐</div>
-  <h1>매장 사장님 로그인</h1>
+  <h1>사장님 로그인</h1>
   <div class="subtitle">단골 관리 시스템</div>
 
-  <label>이메일</label>
-  <input type="email" id="email" placeholder="owner@example.com" autocomplete="email">
+  <label>아이디</label>
+  <input type="text" id="userId" placeholder="예: nagasu" autocomplete="username" autocapitalize="none">
 
-  <label>비밀번호</label>
-  <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+  <label>비밀번호 (4자리 숫자)</label>
+  <input type="password" id="password" placeholder="••••" inputmode="numeric" pattern="[0-9]*" maxlength="20" autocomplete="current-password">
 
   <button id="loginBtn">로그인</button>
 
   <div class="error" id="error"></div>
 
+  <div class="help-note">
+    💡 PG 운영자에게 발급받은 아이디·비밀번호를 입력하세요.<br>
+    아이디·비밀번호 분실 시 PG 운영자에게 문의해주세요.
+  </div>
+
   <div class="footer">
-    계정 발급은 PG 운영자에게 문의<br>
-    <a href="/" style="color: #888; margin-top: 8px; display: inline-block;">← 손님 가입 페이지로</a>
+    <a href="/">← 손님 가입 페이지로</a>
   </div>
 </div>
 
@@ -69,17 +77,40 @@
   import { doc, getDoc }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // 이미 로그인되어있으면 자동으로 관리 페이지로
+  // 시스템 내부 도메인 (사용자에게 안 보임)
+  const INTERNAL_DOMAIN = '@dreammaker.kr';
+
+  // ID를 이메일로 변환
+  function idToEmail(input) {
+    const trimmed = input.trim().toLowerCase();
+    if (trimmed.includes('@')) return trimmed;
+    return trimmed + INTERNAL_DOMAIN;
+  }
+
+  // 4자리 숫자 비밀번호를 Firebase 8자리 비밀번호로 변환
+  // (사장님이 입력한 비번이 4자리 숫자만이면 자동 변환, 그 외엔 그대로)
+  function transformPassword(input) {
+    if (/^\d{4}$/.test(input)) {
+      return 'dm' + input + 'kr';  // 4자리 → 8자리
+    }
+    return input;  // 기존 8자+ 비번은 그대로 (슈퍼 관리자 등)
+  }
+
+  // 이미 로그인되어있으면 자동으로 다음 페이지로
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      const ownerDoc = await getDoc(doc(db, 'shop_owners', user.uid));
-      if (ownerDoc.exists()) {
-        const data = ownerDoc.data();
-        if (data.role === 'super_admin') {
-          window.location.href = '/super-admin.html';
-        } else {
-          window.location.href = '/index1.html?store=' + data.store_id;
+      try {
+        const ownerDoc = await getDoc(doc(db, 'shop_owners', user.uid));
+        if (ownerDoc.exists()) {
+          const data = ownerDoc.data();
+          if (data.role === 'super_admin') {
+            window.location.href = '/super-admin.html';
+          } else {
+            window.location.href = '/index1.html?store=' + data.store_id;
+          }
         }
+      } catch (e) {
+        console.error(e);
       }
     }
   });
@@ -91,19 +122,21 @@
   }
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
-    const email = document.getElementById('email').value.trim();
+    const idInput = document.getElementById('userId').value;
     const pw = document.getElementById('password').value;
-    if (!email || !pw) { showError('이메일과 비밀번호를 입력하세요.'); return; }
+    if (!idInput || !pw) { showError('아이디와 비밀번호를 입력하세요.'); return; }
 
     try {
-      await signInWithEmailAndPassword(auth, email, pw);
+      const email = idToEmail(idInput);
+      const password = transformPassword(pw);
+      await signInWithEmailAndPassword(auth, email, password);
       // onAuthStateChanged가 자동으로 리디렉션 처리
     } catch (e) {
       let msg = '로그인 실패';
-      if (e.code === 'auth/invalid-credential') msg = '이메일 또는 비밀번호가 잘못되었습니다.';
-      else if (e.code === 'auth/user-not-found') msg = '등록되지 않은 이메일입니다.';
+      if (e.code === 'auth/invalid-credential') msg = '아이디 또는 비밀번호가 잘못되었습니다.';
+      else if (e.code === 'auth/user-not-found') msg = '등록되지 않은 아이디입니다.';
       else if (e.code === 'auth/wrong-password') msg = '비밀번호가 틀렸습니다.';
-      else if (e.code === 'auth/invalid-email') msg = '이메일 형식이 올바르지 않습니다.';
+      else if (e.code === 'auth/invalid-email') msg = '아이디 형식이 올바르지 않습니다.';
       else msg = '오류: ' + e.message;
       showError(msg);
     }

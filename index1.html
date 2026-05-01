@@ -211,10 +211,29 @@
           <input class="form-input" id="setting-qr-url" readonly>
         </div>
         <div class="form-group">
-          <label class="form-label">룰렛 페이지 URL (오픈클로가 만든 URL)</label>
-          <input class="form-input" id="setting-roulette-url" placeholder="https://...">
+          <label class="form-label">룰렛 페이지 URL (비워두면 기본 룰렛 사용)</label>
+          <input class="form-input" id="setting-roulette-url" placeholder="기본값: 우리 자체 룰렛">
         </div>
-        <button class="btn btn-primary" id="saveSettingsBtn">저장</button>
+        <button class="btn btn-primary" id="saveSettingsBtn">매장 정보 저장</button>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <div class="card-title">🔐 비밀번호 변경</div>
+        <p style="color:#888; font-size:14px; margin-bottom:16px;">로그인 비밀번호를 변경할 수 있습니다. 새 비밀번호는 4자리 숫자입니다.</p>
+        <div class="form-group">
+          <label class="form-label">현재 비밀번호 (4자리 숫자)</label>
+          <input class="form-input" type="password" id="pw-current" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="현재 4자리 숫자">
+        </div>
+        <div class="form-group">
+          <label class="form-label">새 비밀번호 (4자리 숫자)</label>
+          <input class="form-input" type="password" id="pw-new" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="새 4자리 숫자">
+        </div>
+        <div class="form-group">
+          <label class="form-label">새 비밀번호 확인</label>
+          <input class="form-input" type="password" id="pw-new2" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="다시 한 번">
+        </div>
+        <button class="btn btn-primary" id="changePwBtn">비밀번호 변경</button>
+        <div id="pw-msg" style="margin-top:12px; font-size:14px;"></div>
       </div>
     </div>
   </main>
@@ -222,10 +241,16 @@
 
 <script type="module">
   import { auth, db } from './firebase-config.js';
-  import { onAuthStateChanged, signOut }
+  import { onAuthStateChanged, signOut, EmailAuthProvider, reauthenticateWithCredential, updatePassword }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { doc, getDoc, setDoc, collection, getDocs, query, orderBy, where }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  // 4자리 숫자 → Firebase 8자리 비번 변환
+  function transformPassword(input) {
+    if (/^\d{4}$/.test(input)) return 'dm' + input + 'kr';
+    return input;
+  }
 
   let STORE_ID = null;
   let CUSTOMERS = [];
@@ -497,6 +522,60 @@
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await signOut(auth);
     window.location.href = '/login.html';
+  });
+
+  // 비밀번호 변경
+  document.getElementById('changePwBtn').addEventListener('click', async () => {
+    const cur = document.getElementById('pw-current').value;
+    const newPw = document.getElementById('pw-new').value;
+    const newPw2 = document.getElementById('pw-new2').value;
+    const msg = document.getElementById('pw-msg');
+
+    if (!cur || !newPw || !newPw2) {
+      msg.style.color = '#d04949';
+      msg.textContent = '모든 칸을 입력하세요.';
+      return;
+    }
+    if (!/^\d{4}$/.test(cur) || !/^\d{4}$/.test(newPw)) {
+      msg.style.color = '#d04949';
+      msg.textContent = '비밀번호는 4자리 숫자여야 합니다.';
+      return;
+    }
+    if (newPw !== newPw2) {
+      msg.style.color = '#d04949';
+      msg.textContent = '새 비밀번호 두 칸이 일치하지 않습니다.';
+      return;
+    }
+    if (cur === newPw) {
+      msg.style.color = '#d04949';
+      msg.textContent = '현재 비밀번호와 새 비밀번호가 같습니다.';
+      return;
+    }
+
+    try {
+      const user = auth.currentUser;
+      // 현재 비번으로 재인증
+      const credential = EmailAuthProvider.credential(user.email, transformPassword(cur));
+      await reauthenticateWithCredential(user, credential);
+
+      // 새 비번으로 변경
+      await updatePassword(user, transformPassword(newPw));
+
+      msg.style.color = '#2ea043';
+      msg.textContent = '✅ 비밀번호가 변경되었습니다. 다음 로그인부터 새 비밀번호를 사용하세요.';
+      document.getElementById('pw-current').value = '';
+      document.getElementById('pw-new').value = '';
+      document.getElementById('pw-new2').value = '';
+    } catch (e) {
+      msg.style.color = '#d04949';
+      if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password') {
+        msg.textContent = '현재 비밀번호가 틀렸습니다.';
+      } else if (e.code === 'auth/weak-password') {
+        msg.textContent = '비밀번호 변환 오류 (4자리 숫자 다시 확인).';
+      } else {
+        msg.textContent = '오류: ' + e.message;
+      }
+    }
   });
 </script>
 
