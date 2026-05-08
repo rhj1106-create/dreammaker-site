@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DREAMMAKER : ALLIANCE NETWORK</title>
+    <style>
+        :root {
+            --primary-cyan: #00f2ff;
+            --dark-bg: #03070a;
+            --glass-bg: rgba(6, 15, 25, 0.7);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-bg);
+            font-family: 'Pretendard', sans-serif;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* 전체 배경: 하이테크 회로 & 그래프 느낌 */
+        .bg-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(0, 242, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.05) 0%, transparent 40%);
+            z-index: -1;
+        }
+
+        /* 모바일용 세로형 배치 컨테이너 */
+        .container {
+            width: 100%;
+            max-width: 400px; /* 휴대폰 화면 폭에 맞춤 */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+        }
+
+        /* 상단 상태 바 느낌 */
+        .status-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-family: monospace;
+            font-size: 10px;
+            color: var(--primary-cyan);
+            opacity: 0.8;
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+        }
+
+        /* 로고 & 타이틀 */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            font-size: 40px;
+            color: var(--primary-cyan);
+            filter: drop-shadow(0 0 10px var(--primary-cyan));
+            margin-bottom: 10px;
+        }
+
+        .brand-name {
+            font-size: 12px;
+            letter-spacing: 3px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .main-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+        }
+
+        /* 로그인 박스 (글래스모피즘 효과) */
+        .login-card {
+            width: 100%;
+            background: var(--glass-bg);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            border-radius: 15px;
+            padding: 35px 25px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .card-label {
+            font-size: 16px;
+            color: var(--primary-cyan);
+            letter-spacing: 4px;
+            text-align: center;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+
+        /* 입력창 디자인 */
+        .input-field {
+            width: 100%;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary-cyan);
+            background: rgba(0, 242, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+        }
+
+        /* 버튼 디자인 */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #00d2ff 0%, #00f2ff 100%);
+            border: none;
+            border-radius: 8px;
+            color: #03070a;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 하단 카피라이트 */
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 11px;
+            color: #444;
+            letter-spacing: 1px;
+            line-height: 1.6;
+        }
+
+        /* 배경 데코레이션: 휴머노이드 로봇 형상 (CSS로 빛 효과 표현) */
+        .robot-glow {
+            position: fixed;
+            width: 200px;
+            height: 400px;
+            background: radial-gradient(ellipse at center, rgba(0, 242, 255, 0.15) 0%, transparent 70%);
+            z-index: 0;
+            filter: blur(50px);
+            pointer-events: none;
+        }
+        .left-glow { left: -50px; top: 20%; }
+        .right-glow { right: -50px; bottom: 10%; }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-overlay"></div>
+    <div class="robot-glow left-glow"></div>
+    <div class="robot-glow right-glow"></div>
+
+    <div class="container">
+        <div class="status-bar">
+            <span>SYSTEM_STATUS: SECURE</span>
+            <span>18:23:20 KST</span>
+        </div>
+
+        <div class="header">
+            <div class="logo-icon">💠</div>
+            <div class="brand-name">DREAMMAKER: ALLIANCE NETWORK</div>
+            <div class="main-title">가맹점 파트너 로그인</div>
+        </div>
+
+        <div class="login-card">
+            <div class="card-label">ACCESS SYSTEM</div>
+            
+            <div class="input-field">
+                <input type="text" placeholder="가맹점 코드 / 사용자 ID" spellcheck="false">
+            </div>
+            
+            <div class="input-field">
+                <input type="password" placeholder="비밀번호">
+            </div>
+
+            <button class="submit-btn" onclick="location.reload()">
+                가맹점 시스템 접속 ↵
+            </button>
+        </div>
+
+        <div class="footer">
+            DREAMMAKER CORE (C) 2026. ALL RIGHTS RESERVED.<br>
+            가맹점 지원: 1544-XXXX
+        </div>
+    </div>
+
+</body>
+</html>
