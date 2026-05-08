@@ -3,98 +3,257 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>슈퍼 관리자 — Dreammaker PG</title>
+<title>DREAMMAKER | CORE AI SYSTEM</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #0f0f0f; color: #fff; min-height: 100vh; padding: 24px; }
-  .container { max-width: 1200px; margin: 0 auto; }
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-  h1 { font-size: 28px; color: #f5d97a; }
-  .logout-btn { padding: 10px 18px; background: #2a2a2a; color: #aaa; border: none; border-radius: 8px; cursor: pointer; }
-  .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
-  .card-title { font-size: 18px; font-weight: 700; color: #f5d97a; margin-bottom: 16px; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  label { display: block; font-size: 13px; color: #aaa; margin-bottom: 6px; }
-  input { width: 100%; padding: 12px; background: #0f0f0f; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 15px; }
-  input:focus { outline: none; border-color: #d4af37; }
-  .btn { padding: 14px 24px; background: linear-gradient(135deg, #d4af37, #f5d97a); color: #000; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 15px; margin-top: 16px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 12px; text-align: left; border-bottom: 1px solid #2a2a2a; font-size: 14px; }
-  th { color: #888; font-weight: 700; }
-  .qr-link { color: #d4af37; text-decoration: none; word-break: break-all; }
-  .copy-btn { padding: 4px 10px; background: #333; color: #ccc; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
-  .auth-loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 16px; }
-  .spinner { width: 48px; height: 48px; border: 4px solid #333; border-top-color: #d4af37; border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+  body {
+    background: radial-gradient(circle at center, #0a1128 0%, #000000 100%);
+    color: #00f2ff;
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .hud-border {
+    border: 1px solid rgba(0, 242, 255, 0.3);
+    box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.1);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    position: relative;
+  }
+  .hud-border::before {
+    content: ''; position: absolute; top: -2px; left: -2px; width: 20px; height: 20px;
+    border-top: 2px solid #00f2ff; border-left: 2px solid #00f2ff;
+    pointer-events: none;
+  }
+  .hud-border::after {
+    content: ''; position: absolute; bottom: -2px; right: -2px; width: 20px; height: 20px;
+    border-bottom: 2px solid #00f2ff; border-right: 2px solid #00f2ff;
+    pointer-events: none;
+  }
+
+  .neon-text { text-shadow: 0 0 10px rgba(0, 242, 255, 0.7); font-family: 'Orbitron', sans-serif; }
+  .neon-btn {
+    background: transparent; border: 1px solid #00f2ff; color: #00f2ff;
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+    transition: all 0.3s; cursor: pointer;
+  }
+  .neon-btn:hover:not(:disabled) { background: #00f2ff; color: #000; box-shadow: 0 0 30px #00f2ff; }
+  .neon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .scan-line {
+    position: fixed; left: 0; width: 100%; height: 2px; pointer-events: none; z-index: 1;
+    background: linear-gradient(to right, transparent, #00f2ff, transparent);
+    top: 0; animation: scan 4s linear infinite; opacity: 0.25;
+  }
+  @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+  .glitch-text:hover { animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite; }
+  @keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-2px, 2px); }
+    40% { transform: translate(-2px, -2px); }
+    60% { transform: translate(2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+    100% { transform: translate(0); }
+  }
+
+  /* 인증 로딩 화면 */
+  .auth-loading {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 20px; z-index: 999;
+    background: radial-gradient(circle at center, #0a1128 0%, #000000 100%);
+  }
+  .auth-spinner {
+    width: 60px; height: 60px; border: 2px solid rgba(0, 242, 255, 0.2);
+    border-top-color: #00f2ff; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .info-box { background: #2a1f0a; border: 1px solid #d4af37; padding: 16px; border-radius: 10px; font-size: 14px; line-height: 1.7; color: #ddd; margin-bottom: 20px; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-  .stat { background: #1a1a1a; padding: 20px; border-radius: 12px; }
-  .stat .label { font-size: 13px; color: #888; }
-  .stat .value { font-size: 28px; font-weight: 800; color: #f5d97a; margin-top: 6px; }
+
+  /* 입력 필드 */
+  .cyber-input {
+    width: 100%; background: #000; border: 1px solid #00536e; color: #00f2ff;
+    padding: 12px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    transition: all 0.2s;
+  }
+  .cyber-input:focus { outline: none; border-color: #00f2ff; box-shadow: 0 0 8px rgba(0, 242, 255, 0.3); }
+  .cyber-input::placeholder { color: #00536e; }
+
+  /* 매장 카드 hover */
+  .store-card { cursor: pointer; transition: all 0.3s; }
+  .store-card:hover { background: rgba(0, 242, 255, 0.1) !important; transform: translateX(4px); }
+
+  /* 스크롤바 */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #000; }
+  ::-webkit-scrollbar-thumb { background: rgba(0, 242, 255, 0.3); border-radius: 3px; }
+
+  /* 통계 카드 */
+  .stat-tile {
+    border: 1px solid rgba(0, 242, 255, 0.2);
+    background: rgba(0, 242, 255, 0.03);
+    padding: 12px 16px; border-radius: 6px;
+  }
+  .stat-tile .label { font-size: 9px; opacity: 0.5; letter-spacing: 0.2em; text-transform: uppercase; }
+  .stat-tile .value { font-size: 22px; font-weight: 700; color: #00f2ff; font-family: 'Orbitron', sans-serif; margin-top: 4px; }
+
+  /* 등록 결과 메시지 */
+  .result-success {
+    background: rgba(0, 255, 100, 0.05); border: 1px solid rgba(0, 255, 100, 0.4);
+    color: #9eff9e; padding: 14px; border-radius: 6px; font-size: 12px; line-height: 1.7;
+    margin-top: 12px;
+  }
+  .result-error {
+    background: rgba(255, 50, 50, 0.05); border: 1px solid rgba(255, 50, 50, 0.4);
+    color: #ff9999; padding: 14px; border-radius: 6px; font-size: 12px;
+    margin-top: 12px;
+  }
 </style>
 </head>
-<body>
+<body class="p-6 flex flex-col space-y-6">
 
+<!-- 인증 로딩 -->
 <div id="auth-loading" class="auth-loading">
-  <div class="spinner"></div>
-  <div>인증 확인 중...</div>
+  <div class="auth-spinner"></div>
+  <div class="text-xs tracking-[0.5em] opacity-70 neon-text">AUTHENTICATING...</div>
 </div>
 
-<div class="container" id="app" style="display:none;">
-  <div class="header">
-    <h1>🛡️ 슈퍼 관리자 — Dreammaker PG</h1>
-    <button class="logout-btn" id="logoutBtn">로그아웃</button>
-  </div>
+<!-- 메인 앱 -->
+<div id="app" class="hidden flex-col space-y-6 min-h-screen">
 
-  <div class="info-box">
-    💡 이 페이지는 PG 운영자(=사장님) 전용입니다.<br>
-    여기서 새 매장을 등록하고, 매장 사장님 계정을 발급할 수 있습니다.
-  </div>
+  <div class="scan-line"></div>
 
-  <div class="stats">
-    <div class="stat"><div class="label">전체 매장</div><div class="value" id="stat-stores">-</div></div>
-    <div class="stat"><div class="label">전체 손님</div><div class="value" id="stat-customers">-</div></div>
-    <div class="stat"><div class="label">오늘 가입</div><div class="value" id="stat-today">-</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">➕ 새 매장 등록 + 사장님 계정 한 번에 발급</div>
-    <div class="form-grid">
-      <div>
-        <label>매장 ID (영문/숫자/하이픈)</label>
-        <input type="text" id="new-store-id" placeholder="예: dreammaker001">
-      </div>
-      <div>
-        <label>매장 이름</label>
-        <input type="text" id="new-store-name" placeholder="예: ○○노래주점">
-      </div>
-      <div>
-        <label>사장님 아이디 (로그인용)</label>
-        <input type="text" id="new-owner-id" placeholder="예: nagasu">
-      </div>
-      <div>
-        <label>비밀번호 (4자리 숫자)</label>
-        <input type="text" id="new-owner-password" placeholder="예: 1234" inputmode="numeric" pattern="[0-9]*" maxlength="4">
-      </div>
-      <div>
-        <label>주소 (선택)</label>
-        <input type="text" id="new-store-address" placeholder="예: 서울시 강남구...">
-      </div>
-      <div>
-        <label>사장님 연락처 (선택)</label>
-        <input type="text" id="new-store-phone" placeholder="예: 010-1234-5678">
+  <!-- Top Header -->
+  <header class="flex justify-between items-center px-6 py-4 hud-border rounded-lg">
+    <div class="flex items-center space-x-6">
+      <h1 class="text-2xl font-bold neon-text tracking-[0.3em]">DREAMMAKER.CORE</h1>
+      <div class="h-4 w-[1px] bg-cyan-900"></div>
+      <div class="text-[10px] space-y-1">
+        <p>SYSTEM_STATUS: <span class="text-green-400">ACTIVE</span></p>
+        <p>SYNC_LATENCY: <span class="text-cyan-400" id="latency">--ms</span></p>
       </div>
     </div>
-    <button class="btn" id="addStoreBtn">🎯 매장 + 계정 한 번에 등록</button>
-    <div id="addStoreMsg" style="margin-top:12px;font-size:14px;"></div>
-  </div>
+    <div class="flex items-center space-x-6">
+      <div class="text-right font-bold tracking-widest text-sm">
+        <p id="clock">00:00:00</p>
+        <p class="text-[9px] opacity-50 uppercase">Strategic AI Management</p>
+      </div>
+      <button id="logoutBtn" class="neon-btn px-4 py-2 text-xs tracking-widest">LOGOUT</button>
+    </div>
+  </header>
 
-  <div class="card">
-    <div class="card-title">📋 등록된 매장 목록</div>
-    <table>
-      <thead><tr><th>매장 ID</th><th>이름</th><th>큐알 URL</th><th>관리</th></tr></thead>
-      <tbody id="storesTable"></tbody>
-    </table>
+  <!-- 통계 바 -->
+  <section class="grid grid-cols-4 gap-4">
+    <div class="stat-tile"><div class="label">// ALLIANCE_STORES</div><div class="value" id="stat-stores">--</div></div>
+    <div class="stat-tile"><div class="label">// TOTAL_USERS</div><div class="value" id="stat-customers">--</div></div>
+    <div class="stat-tile"><div class="label">// TODAY_SIGNUPS</div><div class="value" id="stat-today">--</div></div>
+    <div class="stat-tile"><div class="label">// ACTIVE_NODES</div><div class="value" id="stat-active">--</div></div>
+  </section>
+
+  <div class="flex-1 flex space-x-6 overflow-hidden" style="min-height: 600px;">
+
+    <!-- Left: 가맹점 리스트 HUD -->
+    <aside class="w-1/3 flex flex-col space-y-6 overflow-hidden">
+      <div class="flex-1 hud-border rounded-xl p-6 overflow-y-auto" style="max-height: 720px;">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xs font-bold opacity-70 tracking-tighter italic">// ALLIANCE_STORES</h3>
+          <button id="refreshBtn" class="text-[10px] opacity-60 hover:opacity-100 hover:text-cyan-400 transition">↻ REFRESH</button>
+        </div>
+        <div class="space-y-3" id="storesList">
+          <div class="text-center text-[11px] opacity-50 py-8">로딩 중...</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right: 메인 관제 터미널 -->
+    <main class="flex-1 flex flex-col space-y-6">
+
+      <!-- 새 매장 등록 -->
+      <div class="hud-border rounded-2xl p-6">
+        <div class="flex justify-between items-start mb-4">
+          <h2 class="text-base font-bold neon-text tracking-widest">>> NEW_ALLIANCE_LINK</h2>
+          <span class="text-[9px] opacity-50">매장+사장님계정 한번에 발급</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-[9px] opacity-50 tracking-widest">UNIQUE_ID *</label>
+            <input type="text" id="new-store-id" placeholder="예: nagasu" class="cyber-input">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] opacity-50 tracking-widest">STORE_NAME *</label>
+            <input type="text" id="new-store-name" placeholder="예: 나가수 스탠드바" class="cyber-input">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] opacity-50 tracking-widest">OWNER_ID (로그인용) *</label>
+            <input type="text" id="new-owner-id" placeholder="예: nagasu" class="cyber-input">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] opacity-50 tracking-widest">OWNER_PIN (4자리 숫자) *</label>
+            <input type="text" id="new-owner-password" placeholder="••••" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="cyber-input">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] opacity-50 tracking-widest">ADDRESS (선택)</label>
+            <input type="text" id="new-store-address" placeholder="예: 서울시 강남구..." class="cyber-input">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] opacity-50 tracking-widest">OWNER_PHONE (선택)</label>
+            <input type="text" id="new-store-phone" placeholder="010-0000-0000" class="cyber-input">
+          </div>
+        </div>
+
+        <button id="addStoreBtn" class="w-full mt-5 py-3 neon-btn font-bold tracking-[0.4em] text-xs uppercase">
+          [ Initialize System Link ]
+        </button>
+
+        <div id="addStoreMsg" class="hidden"></div>
+      </div>
+
+      <!-- 하단 터미널 로그 + QR -->
+      <div class="flex-1 flex space-x-6">
+        <div class="flex-1 hud-border rounded-xl p-6 font-mono text-[11px] overflow-hidden flex flex-col">
+          <div class="flex justify-between items-center mb-3 border-b border-cyan-900 pb-2">
+            <span class="text-cyan-400 font-bold tracking-tighter">AI_CORE_LOG_STREAM</span>
+            <span class="text-[9px] opacity-40" id="logMemory">MEMORY: 0KB</span>
+          </div>
+          <div class="flex-1 space-y-1 opacity-80 overflow-y-auto" id="logContainer" style="max-height: 240px;">
+            <p>> initializing dreammaker_ai_engine... <span class="text-green-400">[OK]</span></p>
+            <p>> loading marketing_retention_v2.dll... <span class="text-green-400">[OK]</span></p>
+            <p>> auth_layer ready... <span class="text-green-400">[OK]</span></p>
+            <p>> waiting for master_command...</p>
+          </div>
+        </div>
+
+        <!-- QR 시각화 -->
+        <div class="w-48 flex flex-col items-center">
+          <div class="w-44 h-44 bg-white/5 rounded-xl border border-cyan-900 flex items-center justify-center p-3 relative group">
+            <div id="qrcode" class="qr-container"></div>
+            <div class="absolute inset-0 border border-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-xl"></div>
+          </div>
+          <p class="text-[9px] opacity-50 mt-2 tracking-widest">// LATEST_QR</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- 매장 상세 모달 -->
+<div id="storeModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6">
+  <div class="hud-border rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4 border-b border-cyan-900 pb-3">
+      <h3 class="text-lg neon-text tracking-widest" id="modalTitle">// STORE_DETAIL</h3>
+      <button id="modalCloseBtn" class="neon-btn px-3 py-1 text-[10px]">CLOSE</button>
+    </div>
+    <div id="modalBody" class="space-y-4 text-sm"></div>
   </div>
 </div>
 
@@ -102,75 +261,202 @@
   import { auth, db } from './firebase-config.js';
   import { onAuthStateChanged, signOut, createUserWithEmailAndPassword }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { doc, getDoc, setDoc, collection, getDocs, serverTimestamp }
+  import { doc, getDoc, setDoc, collection, getDocs, serverTimestamp, query, orderBy }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   let CURRENT_USER = null;
+  let LATENCY_START = 0;
 
+  // ============================================================
+  // 🔑 슈퍼관리자 화이트리스트
+  // ----------------------------------------------------------------
+  // Firestore의 shop_owners 문서에 super_admin role이 없어도
+  // 이 목록에 있는 이메일은 무조건 슈퍼관리자로 인정합니다.
+  // (PG 운영자 본인 백업용 — 비번 분실/계정 꼬임 시에도 진입 가능)
+  // ============================================================
+  const SUPER_ADMIN_WHITELIST = [
+    'rhj1106@gmail.com',
+    'rhj17321@gmail.com'
+    // 사장님이 추가하고 싶은 본 메일이 있으면 여기에 추가하세요
+  ];
+
+  // 시계
+  setInterval(() => {
+    const now = new Date();
+    const clk = document.getElementById('clock');
+    if (clk) clk.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+  }, 1000);
+
+  // 로그 추가
+  function addLog(text, type = 'info') {
+    const cont = document.getElementById('logContainer');
+    if (!cont) return;
+    const colorClass = type === 'success' ? 'text-green-400'
+                     : type === 'error' ? 'text-red-400'
+                     : type === 'warn' ? 'text-yellow-500'
+                     : '';
+    const p = document.createElement('p');
+    p.innerHTML = `<span class="${colorClass}">> ${text}</span>`;
+    cont.prepend(p);
+    while (cont.children.length > 30) cont.removeChild(cont.lastChild);
+    document.getElementById('logMemory').textContent = `MEMORY: ${cont.children.length * 0.4}KB`;
+  }
+
+  // 인증 가드
+  LATENCY_START = performance.now();
   onAuthStateChanged(auth, async (user) => {
-    if (!user) { window.location.href = '/login.html'; return; }
-    const ownerDoc = await getDoc(doc(db, 'shop_owners', user.uid));
-    if (!ownerDoc.exists() || ownerDoc.data().role !== 'super_admin') {
-      alert('슈퍼 관리자 권한이 없습니다.');
-      await signOut(auth);
+    if (!user) {
       window.location.href = '/login.html';
       return;
     }
-    CURRENT_USER = user;
-    document.getElementById('auth-loading').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    loadStores();
+    try {
+      // ① 화이트리스트 우선 검사 (Firestore 우회)
+      const isWhitelisted = SUPER_ADMIN_WHITELIST.includes((user.email || '').toLowerCase());
+
+      // ② Firestore role 검사 (정식 절차)
+      let hasRoleSuperAdmin = false;
+      try {
+        const ownerDoc = await getDoc(doc(db, 'shop_owners', user.uid));
+        hasRoleSuperAdmin = ownerDoc.exists() && ownerDoc.data().role === 'super_admin';
+      } catch(_) { /* Firestore 조회 실패해도 화이트리스트로 통과 가능 */ }
+
+      if (!isWhitelisted && !hasRoleSuperAdmin) {
+        alert('슈퍼 관리자 권한이 없습니다.');
+        await signOut(auth);
+        window.location.href = '/login.html';
+        return;
+      }
+
+      CURRENT_USER = user;
+      const latency = Math.round(performance.now() - LATENCY_START);
+      document.getElementById('latency').textContent = latency + 'ms';
+      document.getElementById('auth-loading').style.display = 'none';
+      document.getElementById('app').classList.remove('hidden');
+      document.getElementById('app').classList.add('flex');
+      const authMode = isWhitelisted ? 'WHITELIST' : 'FIRESTORE_ROLE';
+      addLog(`auth_session_validated [${authMode}] [uid=${user.uid.substring(0,8)}...]`, 'success');
+      loadStores();
+    } catch (e) {
+      console.error(e);
+      addLog('auth_error: ' + e.message, 'error');
+    }
   });
 
+  // 매장 + 통계 로드
   async function loadStores() {
-    const storesSnap = await getDocs(collection(db, 'stores'));
-    const stores = [];
-    let totalCustomers = 0;
-    let todayCount = 0;
-    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    addLog('fetching alliance_stores...');
+    try {
+      const storesSnap = await getDocs(collection(db, 'stores'));
+      const stores = [];
+      let totalCustomers = 0;
+      let todayCount = 0;
+      let activeCount = 0;
+      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
 
-    for (const storeDoc of storesSnap.docs) {
-      const storeData = { id: storeDoc.id, ...storeDoc.data() };
-      const custSnap = await getDocs(collection(db, 'stores', storeDoc.id, 'customers'));
-      storeData.customerCount = custSnap.size;
-      totalCustomers += custSnap.size;
-      custSnap.forEach(c => {
-        const ms = c.data().created_at?.toMillis() || 0;
-        if (ms >= todayStart.getTime()) todayCount++;
-      });
-      stores.push(storeData);
-    }
+      for (const storeDoc of storesSnap.docs) {
+        const storeData = { id: storeDoc.id, ...storeDoc.data() };
+        const custSnap = await getDocs(collection(db, 'stores', storeDoc.id, 'customers'));
+        storeData.customerCount = custSnap.size;
+        totalCustomers += custSnap.size;
+        custSnap.forEach(c => {
+          const ms = c.data().created_at?.toMillis?.() || 0;
+          if (ms >= todayStart.getTime()) todayCount++;
+        });
+        if (custSnap.size > 0) activeCount++;
+        stores.push(storeData);
+      }
 
-    document.getElementById('stat-stores').textContent = stores.length;
-    document.getElementById('stat-customers').textContent = totalCustomers;
-    document.getElementById('stat-today').textContent = todayCount;
+      document.getElementById('stat-stores').textContent = stores.length;
+      document.getElementById('stat-customers').textContent = totalCustomers;
+      document.getElementById('stat-today').textContent = todayCount;
+      document.getElementById('stat-active').textContent = activeCount;
 
-    const tbody = document.getElementById('storesTable');
-    if (stores.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;padding:40px;">등록된 매장이 없습니다.</td></tr>';
-    } else {
-      tbody.innerHTML = stores.map(s => {
-        const qrUrl = window.location.origin + '/?store=' + s.id;
-        return `<tr>
-          <td><code>${s.id}</code></td>
-          <td>${s.name || '-'} <span style="color:#888;">(손님 ${s.customerCount}명)</span></td>
-          <td><a href="${qrUrl}" class="qr-link" target="_blank">${qrUrl}</a> <button class="copy-btn" onclick="navigator.clipboard.writeText('${qrUrl}');this.textContent='복사됨'">복사</button></td>
-          <td><a href="/index1.html?store=${s.id}" class="qr-link">관리 →</a></td>
-        </tr>`;
-      }).join('');
+      renderStoresList(stores);
+      addLog(`loaded ${stores.length} stores | ${totalCustomers} users`, 'success');
+    } catch (e) {
+      addLog('load_error: ' + e.message, 'error');
     }
   }
 
-  // 시스템 내부 도메인 (사용자에게 안 보임)
-  const INTERNAL_DOMAIN = '@dreammaker.kr';
+  // 매장 목록 렌더
+  function renderStoresList(stores) {
+    const cont = document.getElementById('storesList');
+    if (!stores.length) {
+      cont.innerHTML = `<div class="text-center text-[11px] opacity-50 py-8">// NO ALLIANCE_STORES</div>`;
+      return;
+    }
+    cont.innerHTML = stores.map(s => {
+      const lvl = s.customerCount >= 100 ? 'LVL_05'
+                : s.customerCount >= 50  ? 'LVL_03'
+                : s.customerCount >= 10  ? 'LVL_02' : 'LVL_01';
+      const active = s.customerCount > 0;
+      const barWidth = Math.min(100, s.customerCount * 2);
+      return `
+        <div class="store-card p-3 border-l-2 ${active ? 'border-cyan-500 bg-cyan-950/20' : 'border-gray-700 bg-gray-900/10 opacity-60'}"
+             data-store-id="${s.id}">
+          <div class="flex justify-between items-start">
+            <span class="text-xs font-bold glitch-text uppercase">${(s.id || '').replace(/-/g,'_')}</span>
+            <span class="text-[9px] bg-cyan-900 px-2 py-0.5 rounded">${lvl}</span>
+          </div>
+          <p class="text-[10px] opacity-60 mt-1">${s.name || '-'}</p>
+          ${active ? `<div class="mt-2 h-[3px] bg-cyan-900 w-full"><div class="h-[3px] bg-cyan-400 shadow-[0_0_8px_#00f2ff]" style="width:${barWidth}%"></div></div>` : ''}
+          <p class="text-[9px] mt-2 opacity-50">USERS: ${s.customerCount} | ${active ? 'ACTIVE' : 'STANDBY_MODE'}</p>
+        </div>
+      `;
+    }).join('');
 
-  // 4자리 숫자 → Firebase 8자리 비번
+    // 클릭 → 상세 모달
+    cont.querySelectorAll('.store-card').forEach(el => {
+      el.addEventListener('click', () => openStoreModal(el.dataset.storeId, stores));
+    });
+  }
+
+  // 매장 상세 모달
+  async function openStoreModal(storeId, stores) {
+    const store = stores.find(s => s.id === storeId);
+    if (!store) return;
+    document.getElementById('modalTitle').textContent = `// ${storeId.toUpperCase()} :: DETAIL`;
+    const qrUrl = window.location.origin + '/?store=' + storeId;
+    const ownerLink = '/index1.html?store=' + storeId;
+
+    document.getElementById('modalBody').innerHTML = `
+      <div class="grid grid-cols-2 gap-4 text-[12px]">
+        <div><span class="opacity-50">// STORE_NAME</span><div class="mt-1">${store.name || '-'}</div></div>
+        <div><span class="opacity-50">// USERS</span><div class="mt-1 text-cyan-400 font-bold">${store.customerCount}</div></div>
+        <div><span class="opacity-50">// ADDRESS</span><div class="mt-1">${store.address || '-'}</div></div>
+        <div><span class="opacity-50">// OWNER_PHONE</span><div class="mt-1">${store.ownerPhone || '-'}</div></div>
+      </div>
+      <div class="border-t border-cyan-900 pt-4 mt-4 space-y-3">
+        <div>
+          <span class="opacity-50 text-[10px] tracking-widest">// CUSTOMER_QR_URL</span>
+          <div class="mt-1 flex items-center space-x-2">
+            <code class="text-[11px] text-cyan-400 break-all flex-1">${qrUrl}</code>
+            <button onclick="navigator.clipboard.writeText('${qrUrl}'); this.textContent='COPIED';" class="neon-btn px-2 py-1 text-[10px]">COPY</button>
+          </div>
+        </div>
+        <div>
+          <a href="${ownerLink}" target="_blank" class="neon-btn inline-block px-4 py-2 text-[10px] tracking-widest">[ OPEN OWNER_PANEL → ]</a>
+        </div>
+      </div>
+      <div class="border-t border-cyan-900 pt-4 mt-4 text-[10px] opacity-50">
+        <p>// 추가 기능 (전체 고객 / 메시지 이력 / 매장 수정) 준비 중</p>
+      </div>
+    `;
+    document.getElementById('storeModal').classList.remove('hidden');
+  }
+
+  document.getElementById('modalCloseBtn').addEventListener('click', () => {
+    document.getElementById('storeModal').classList.add('hidden');
+  });
+
+  // 비번 변환
+  const INTERNAL_DOMAIN = '@dreammaker.kr';
   function transformPassword(input) {
     if (/^\d{4}$/.test(input)) return 'dm' + input + 'kr';
     return input;
   }
 
-  // ★★ 매장 + 사장님 계정 한 번에 등록 ★★
+  // 새 매장 등록
   document.getElementById('addStoreBtn').addEventListener('click', async () => {
     const storeId = document.getElementById('new-store-id').value.trim();
     const storeName = document.getElementById('new-store-name').value.trim();
@@ -180,44 +466,44 @@
     const passwordInput = document.getElementById('new-owner-password').value;
     const msg = document.getElementById('addStoreMsg');
 
-    // 입력 검증
+    msg.classList.remove('hidden');
+
     if (!storeId || !storeName || !userId || !passwordInput) {
-      msg.style.color = '#ff9999';
-      msg.textContent = '매장 ID, 매장 이름, 사장님 아이디, 비밀번호는 필수입니다.';
+      msg.className = 'result-error';
+      msg.textContent = '> ERROR: required fields missing (UNIQUE_ID, STORE_NAME, OWNER_ID, PIN).';
       return;
     }
     if (!/^[a-zA-Z0-9-]+$/.test(storeId)) {
-      msg.style.color = '#ff9999';
-      msg.textContent = '매장 ID는 영문/숫자/하이픈만 가능합니다.';
+      msg.className = 'result-error';
+      msg.textContent = '> ERROR: UNIQUE_ID must be [a-zA-Z0-9-] only.';
       return;
     }
     if (!/^[a-z0-9_-]{3,}$/.test(userId)) {
-      msg.style.color = '#ff9999';
-      msg.textContent = '사장님 아이디는 영문 소문자/숫자/언더바/하이픈만 가능 (3자 이상).';
+      msg.className = 'result-error';
+      msg.textContent = '> ERROR: OWNER_ID must be lowercase [a-z0-9_-] (min 3 chars).';
       return;
     }
     if (!/^\d{4}$/.test(passwordInput)) {
-      msg.style.color = '#ff9999';
-      msg.textContent = '비밀번호는 4자리 숫자로 입력하세요.';
+      msg.className = 'result-error';
+      msg.textContent = '> ERROR: OWNER_PIN must be exactly 4 digits.';
       return;
     }
 
+    addLog(`registering [${storeId}]...`);
+
     try {
-      // 1. 매장 ID 중복 체크
       const existing = await getDoc(doc(db, 'stores', storeId));
       if (existing.exists()) {
-        msg.style.color = '#ff9999';
-        msg.textContent = '이미 사용 중인 매장 ID입니다.';
+        msg.className = 'result-error';
+        msg.textContent = '> ERROR: UNIQUE_ID already in use.';
         return;
       }
 
-      // 2. 매장 등록
       await setDoc(doc(db, 'stores', storeId), {
         name: storeName, address, ownerPhone: phone,
         rouletteUrl: '', created_at: serverTimestamp()
       });
 
-      // 3. 사장님 계정 발급
       const email = userId + INTERNAL_DOMAIN;
       const password = transformPassword(passwordInput);
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
@@ -226,40 +512,58 @@
         role: 'owner', created_at: serverTimestamp()
       });
 
-      msg.style.color = '#9eff9e';
-      msg.innerHTML = `✅ 등록 완료!<br><br>
-        <strong>매장 사장님께 알려드릴 정보:</strong><br>
-        ▸ 로그인 주소: <code>${window.location.origin}/login.html</code><br>
-        ▸ 아이디: <code>${userId}</code><br>
-        ▸ 비밀번호: <code>${passwordInput}</code> (4자리 숫자)<br>
-        ▸ 매장 큐알 주소: <code>${window.location.origin}/?store=${storeId}</code><br><br>
-        ⚠️ 새 계정으로 자동 로그인되어 슈퍼 관리자 세션이 끊깁니다.<br>
-        10초 후 자동 로그아웃 → 다시 슈퍼 관리자(rhj1106@gmail.com)로 로그인하세요.`;
+      const customerUrl = window.location.origin + '/?store=' + storeId;
 
-      // 입력칸 초기화
-      document.getElementById('new-store-id').value = '';
-      document.getElementById('new-store-name').value = '';
-      document.getElementById('new-store-address').value = '';
-      document.getElementById('new-store-phone').value = '';
-      document.getElementById('new-owner-id').value = '';
-      document.getElementById('new-owner-password').value = '';
+      // QR 표시
+      document.getElementById('qrcode').innerHTML = '';
+      new QRCode(document.getElementById('qrcode'), {
+        text: customerUrl, width: 156, height: 156,
+        colorDark: '#000', colorLight: '#fff'
+      });
 
-      // 10초 후 자동 로그아웃
+      msg.className = 'result-success';
+      msg.innerHTML = `
+        <div class="font-bold tracking-widest mb-2">> SUCCESS: link_established for [${storeId.toUpperCase()}]</div>
+        <div class="text-[11px] opacity-90 leading-7">
+          ▸ LOGIN URL: <code class="text-cyan-400">${window.location.origin}/login.html</code><br>
+          ▸ OWNER ID: <code class="text-cyan-400">${userId}</code><br>
+          ▸ OWNER PIN: <code class="text-cyan-400">${passwordInput}</code> (4자리)<br>
+          ▸ CUSTOMER QR: <code class="text-cyan-400">${customerUrl}</code><br><br>
+          <span class="text-yellow-400">⚠ 새 계정으로 자동 로그인되어 슈퍼관리자 세션이 끊깁니다.<br>
+          10초 후 자동 로그아웃 → 다시 슈퍼관리자(rhj1106@gmail.com)로 로그인하세요.</span>
+        </div>
+      `;
+
+      addLog(`success: [${storeId.toUpperCase()}] linked | owner=${userId}`, 'success');
+
+      ['new-store-id','new-store-name','new-store-address','new-store-phone','new-owner-id','new-owner-password']
+        .forEach(id => document.getElementById(id).value = '');
+
       setTimeout(async () => {
         await signOut(auth);
         window.location.href = '/login.html';
       }, 10000);
+
     } catch (e) {
-      let errMsg = '오류: ' + e.message;
-      if (e.code === 'auth/email-already-in-use') errMsg = '이미 사용 중인 사장님 아이디입니다. 다른 아이디로 시도해주세요.';
-      else if (e.code === 'auth/invalid-email') errMsg = '아이디 형식이 올바르지 않습니다.';
-      else if (e.code === 'auth/weak-password') errMsg = '비밀번호 변환 오류 — 4자리 숫자 다시 확인.';
-      msg.style.color = '#ff9999';
+      let errMsg = '> ERROR: ' + e.message;
+      if (e.code === 'auth/email-already-in-use') errMsg = '> ERROR: OWNER_ID already in use.';
+      else if (e.code === 'auth/invalid-email') errMsg = '> ERROR: invalid OWNER_ID format.';
+      else if (e.code === 'auth/weak-password') errMsg = '> ERROR: password transformation failed.';
+      msg.className = 'result-error';
       msg.textContent = errMsg;
+      addLog('register_failed: ' + (e.code || e.message), 'error');
     }
   });
 
+  // 새로고침 버튼
+  document.getElementById('refreshBtn').addEventListener('click', () => {
+    addLog('manual_refresh triggered');
+    loadStores();
+  });
+
+  // 로그아웃
   document.getElementById('logoutBtn').addEventListener('click', async () => {
+    addLog('logout triggered');
     await signOut(auth);
     window.location.href = '/login.html';
   });
