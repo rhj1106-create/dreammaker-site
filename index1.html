@@ -2,8 +2,20 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>단골관리 — Dreammaker</title>
+
+<!-- PWA 메타 -->
+<meta name="theme-color" content="#1A2332">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="고객관리">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<script src="/pwa-loader.js" defer></script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -166,15 +178,31 @@
             <div class="form-group">
               <label class="form-label">✏️ 메시지 내용</label>
               <textarea class="form-textarea" id="msgContent" placeholder="템플릿을 선택하거나 직접 입력하세요..."></textarea>
+              <div style="font-size:12px;color:#888;margin-top:6px;">
+                💡 <strong>{이름}</strong> 자리에 손님 이름이 자동 입력됩니다 (이름 정보 있을 때).<br>
+                ※ SMS 90자 이내 권장 (그 이상은 LMS로 자동 전환·요금 ↑)
+              </div>
             </div>
-            <div style="display: flex; gap: 10px;">
-              <button class="btn btn-secondary" style="flex:1;">미리보기</button>
-              <button class="btn btn-primary" style="flex:2;" onclick="alert('알림톡 API 연동 후 작동.\n현재 발송 대상 명단은 콘솔에서 확인 가능.')">📤 발송하기</button>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-secondary" id="copyMsgBtn" style="flex:1;min-width:140px;">📋 메시지 복사</button>
+              <button class="btn btn-secondary" id="copyPhonesBtn" style="flex:1;min-width:140px;">📞 번호 복사</button>
+              <button class="btn btn-primary" id="downloadCsvBtn" style="flex:2;min-width:200px;">📥 알리고용 CSV 내려받기</button>
             </div>
+            <button class="btn btn-secondary" id="recordSentBtn" style="width:100%;margin-top:10px;background:#e8f4fd;color:#2575c4;">
+              ✅ 발송 완료 기록하기 (알리고에서 발송 후 클릭)
+            </button>
           </div>
           <div style="margin-top: 16px; padding: 16px; background: #fff8e1; border-radius: 12px; font-size: 13px; color: #8a6914; line-height: 1.6;">
             💡 <strong>발송 비용 (예상)</strong><br>
             <span id="cost-info">계산 중...</span>
+          </div>
+          <div style="margin-top: 12px; padding: 16px; background: #f0f7ff; border-radius: 12px; font-size: 13px; color: #2575c4; line-height: 1.7;">
+            <strong>📨 알리고 발송 방법 (반자동)</strong><br>
+            1. <strong>📋 메시지 복사</strong> → 메시지 클립보드에 복사<br>
+            2. <strong>📥 CSV 내려받기</strong> → 발송 명단 다운로드<br>
+            3. <a href="https://smartsms.aligo.in" target="_blank" style="color:#2575c4;font-weight:700;">알리고(smartsms.aligo.in) ↗</a> 접속 → 로그인<br>
+            4. "단체 SMS" → CSV 업로드 → 메시지 붙여넣기 → 발송<br>
+            5. 발송 완료 후 다시 와서 <strong>✅ 발송 완료 기록하기</strong> 클릭 (이력 저장)
           </div>
         </div>
       </div>
@@ -243,7 +271,7 @@
   import { auth, db } from './firebase-config.js';
   import { onAuthStateChanged, signOut, EmailAuthProvider, reauthenticateWithCredential, updatePassword }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { doc, getDoc, setDoc, collection, getDocs, query, orderBy, where }
+  import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, orderBy, where, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   // 4자리 숫자 → Firebase 8자리 비번 변환
@@ -303,6 +331,11 @@
     document.getElementById('setting-name').value = data.name || '';
     document.getElementById('setting-qr-url').value = window.location.origin + '/?store=' + STORE_ID;
     document.getElementById('setting-roulette-url').value = data.rouletteUrl || '';
+
+    // PWA — 가게명으로 앱 이름 동적 변경 ("{가게명} 고객관리")
+    if (data.name && window.DM_PWA && window.DM_PWA.setStoreName) {
+      window.DM_PWA.setStoreName(data.name);
+    }
   }
 
   async function loadCustomers() {
@@ -522,6 +555,104 @@
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await signOut(auth);
     window.location.href = '/login.html';
+  });
+
+  // ====== 발송 대상 필터링 함수 ======
+  function getRecipientsForCurrentTarget() {
+    const target = document.querySelector('.target-option.active')?.dataset.target || 'all';
+    let list = CUSTOMERS.filter(c => c.consent_marketing); // 마케팅 동의자만
+    if (target === 'vip') list = list.filter(c => c.computed_grade === 'vip');
+    else if (target === 'new') list = list.filter(c => c.computed_grade === 'new');
+    else if (target === 'inactive') list = list.filter(c => c.computed_grade === 'inactive');
+    return list;
+  }
+
+  // ====== 메시지에 매장명·이름 치환 ======
+  function processMessage(template, customerName) {
+    let m = template;
+    m = m.replace(/\[매장명\]/g, document.getElementById('sidebarStoreName').textContent || '');
+    m = m.replace(/#?\{이름\}/g, customerName || '단골');
+    return m;
+  }
+
+  // ====== 메시지 복사 ======
+  document.getElementById('copyMsgBtn').addEventListener('click', () => {
+    const msg = document.getElementById('msgContent').value;
+    if (!msg) { alert('메시지를 먼저 입력하세요.'); return; }
+    const processed = processMessage(msg, '');
+    navigator.clipboard.writeText(processed).then(() => {
+      alert('✅ 메시지 복사됨!\n\n알리고 화면에서 메시지 입력칸에 붙여넣기(Ctrl+V) 하세요.\n\n주의: 손님 이름은 알리고에서 자동으로 들어가지 않습니다. 필요하면 알리고의 "변수 치환" 기능 사용 또는 "{이름}" 자리에 공통 호칭으로 변경.');
+    });
+  });
+
+  // ====== 전화번호만 복사 ======
+  document.getElementById('copyPhonesBtn').addEventListener('click', () => {
+    const list = getRecipientsForCurrentTarget();
+    if (list.length === 0) { alert('발송 대상이 없습니다.'); return; }
+    const phones = list.map(c => c.phone).join('\n');
+    navigator.clipboard.writeText(phones).then(() => {
+      alert(`✅ 전화번호 ${list.length}개 복사됨!\n알리고 또는 다른 발송 도구에 붙여넣기.`);
+    });
+  });
+
+  // ====== 알리고 양식 CSV 다운로드 ======
+  document.getElementById('downloadCsvBtn').addEventListener('click', () => {
+    const list = getRecipientsForCurrentTarget();
+    if (list.length === 0) { alert('발송 대상이 없습니다.'); return; }
+    const msgTemplate = document.getElementById('msgContent').value || '';
+    if (!msgTemplate) { alert('메시지를 먼저 입력하세요.'); return; }
+
+    // 알리고 단체 SMS 표준 양식: 받는번호, 메시지내용
+    // BOM 추가 (엑셀 한글 깨짐 방지)
+    let csv = '﻿받는번호,메시지\n';
+    list.forEach(c => {
+      const phone = (c.phone || '').replace(/-/g, '');
+      const personalized = processMessage(msgTemplate, c.name || '');
+      // CSV에서 따옴표 처리
+      const safeMsg = '"' + personalized.replace(/"/g, '""') + '"';
+      csv += phone + ',' + safeMsg + '\n';
+    });
+
+    const today = new Date().toISOString().slice(0,10);
+    const target = document.querySelector('.target-option.active')?.dataset.target || 'all';
+    const filename = `발송명단_${target}_${today}.csv`;
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+
+    alert(`✅ ${list.length}명의 명단을 ${filename} 으로 저장했습니다.\n\n다음:\n1. 알리고 (smartsms.aligo.in) 접속·로그인\n2. 단체 SMS 메뉴\n3. 이 CSV 파일 업로드\n4. 메시지 입력 (📋 메시지 복사 후 붙여넣기)\n5. 발송!`);
+  });
+
+  // ====== 발송 완료 기록 ======
+  document.getElementById('recordSentBtn').addEventListener('click', async () => {
+    const list = getRecipientsForCurrentTarget();
+    const msgTemplate = document.getElementById('msgContent').value || '';
+    if (list.length === 0 || !msgTemplate) {
+      alert('발송 대상 또는 메시지가 없습니다.');
+      return;
+    }
+    const target = document.querySelector('.target-option.active')?.dataset.target || 'all';
+    const confirmed = confirm(`알리고에서 ${list.length}명에게 발송하셨나요?\n시스템에 발송 이력으로 기록합니다.`);
+    if (!confirmed) return;
+
+    try {
+      // stores/{store}/messages_sent 컬렉션에 발송 이력 저장
+      const sentRef = collection(db, 'stores', STORE_ID, 'messages_sent');
+      await addDoc(sentRef, {
+        sent_at: serverTimestamp(),
+        target_segment: target,
+        recipient_count: list.length,
+        recipient_phones: list.map(c => c.phone),
+        message_template: msgTemplate,
+        sent_by: auth.currentUser.email
+      });
+      alert(`✅ ${list.length}명 발송 이력 저장 완료!\n(통계 페이지에서 확인 가능 — 추후 추가 예정)`);
+    } catch (e) {
+      alert('이력 저장 실패: ' + e.message);
+    }
   });
 
   // 비밀번호 변경

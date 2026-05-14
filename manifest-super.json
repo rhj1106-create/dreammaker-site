@@ -1,0 +1,19 @@
+{
+  "name": "드림메이커 관리",
+  "short_name": "DM 관리",
+  "description": "드림메이커 PG 슈퍼관리자",
+  "start_url": "/super-admin.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0F1B2D",
+  "theme_color": "#0F1B2D",
+  "lang": "ko",
+  "categories": ["business"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

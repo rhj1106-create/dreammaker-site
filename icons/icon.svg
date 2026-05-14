@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 배경: 둥근 사각형 (Android adaptive icon safe area 고려) -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1A2332"/>
+      <stop offset="1" stop-color="#0F1B2D"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F5D97A"/>
+      <stop offset="0.5" stop-color="#E6C68A"/>
+      <stop offset="1" stop-color="#B89968"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="96" ry="96" fill="url(#bg)"/>
+
+  <!-- 마이크 헤드 -->
+  <g filter="url(#glow)">
+    <rect x="196" y="120" width="120" height="190" rx="60" ry="60" fill="url(#gold)"/>
+    <!-- 그릴 라인 -->
+    <line x1="216" y1="170" x2="296" y2="170" stroke="#1A2332" stroke-width="3" opacity="0.4"/>
+    <line x1="216" y1="200" x2="296" y2="200" stroke="#1A2332" stroke-width="3" opacity="0.4"/>
+    <line x1="216" y1="230" x2="296" y2="230" stroke="#1A2332" stroke-width="3" opacity="0.4"/>
+    <line x1="216" y1="260" x2="296" y2="260" stroke="#1A2332" stroke-width="3" opacity="0.4"/>
+
+    <!-- 마이크 받침 호 -->
+    <path d="M 156 270 Q 156 360 256 360 Q 356 360 356 270" stroke="url(#gold)" stroke-width="14" fill="none" stroke-linecap="round"/>
+
+    <!-- 스탠드 -->
+    <rect x="246" y="358" width="20" height="50" fill="url(#gold)"/>
+    <rect x="206" y="402" width="100" height="14" rx="7" ry="7" fill="url(#gold)"/>
+  </g>
+</svg>
