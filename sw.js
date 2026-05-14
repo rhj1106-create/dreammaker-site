@@ -1,6 +1,6 @@
 // Dreammaker PG — Service Worker
 // 버전 올리면 모든 사용자에게 강제 업데이트됨
-const CACHE_VERSION = 'dm-v1';
+const CACHE_VERSION = 'dm-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 // 앱셸: 첫 진입 시 캐싱해두고 오프라인에서도 보이게 할 핵심 파일들
