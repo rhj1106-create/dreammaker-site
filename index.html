@@ -1,7 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"><script>
+  // 루트 진입 분기: ?store= 없으면 super-admin으로 (2026-05-15)
+  (function(){
+    try {
+      var qs = new URLSearchParams(location.search);
+      if (!qs.get('store')) {
+        location.replace('/super-admin.html');
+      }
+    } catch(e) {}
+  })();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>단골 가입 — 큐알 페이지</title>
 <style>
